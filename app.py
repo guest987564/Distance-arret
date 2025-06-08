@@ -20,6 +20,16 @@ import time
 st.set_page_config(page_title="Simulateur – Distance d’arrêt",
                    page_icon="🚗", layout="wide")
 st.title("Simulateur de distance d'arrêt")
+
+st.header("Pourquoi la distance d'arrêt ?")
+st.write(
+    "La distance parcourue avant l'arrêt complet dépend de la vitesse et de l'adhérence."
+    " Ce simulateur permet de visualiser cet impact de manière intuitive."
+)
+st.info(
+    "En France, la distance d'arrêt réglementaire à 50 km/h est d'environ 25 m. "
+    "[Service-Public.fr](https://www.service-public.fr/)"
+)
 G = 9.81  # gravité (m·s-2)
 RNG = np.random.default_rng(42)
 
@@ -35,6 +45,22 @@ class Params:
     slope: str
     conf: float
     child_d: float
+
+if st.button("🚀 Lancer la démo", key="demo"):
+    demo_params = Params(
+        speed=30,
+        profile="Standard",
+        surface="sec",
+        tyre="neuf",
+        slope="Plat",
+        conf=0.95,
+        child_d=25.0,
+    )
+    with st.spinner("Calcul rapide..."):
+        dist_demo = run_mc(demo_params, batch=5_000, max_iter=1)
+    st.session_state["dist"] = dist_demo
+    st.session_state["params"] = demo_params
+    st.experimental_rerun()
 
 # ==============================================================
 # 1. Lois de probabilité
@@ -243,7 +269,7 @@ if advanced:
         surface = st.select_slider(
             "Chaussée 🚧",
             options=list(SURFACE_μ),
-            help="État de la chaussée",
+            help="État de la route (adhérence)",
         )
         tyre = st.select_slider(
             "Pneus 🔄",
@@ -331,9 +357,8 @@ params = Params(
     child_d=child_d,
 )
 
-tab_res, tab_stats, tab_var, tab_about = st.tabs([
-    "📊 Résultats",
-    "📋 Statistiques",
+tab_dash, tab_var, tab_about = st.tabs([
+    "📊 Tableau de bord",
     "🔎 Variables",
     "ℹ️ À propos",
 ])
@@ -380,12 +405,13 @@ if dist is not None:
     ci = z * std
 
     # -------- Graphiques et KPIs --------------------------------------
-    with tab_res:
+    with tab_dash:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Distance moyenne (m)", f"{mean:.1f}")
         c2.metric("Écart type (m)", f"{std:.1f}")
         c3.metric(f"Distance P{p_val} (m)", f"{p_quant:.1f}")
-        c4.metric("Probabilité de collision", f"{p_coll*100:.1f} %")
+        prob_color = "🟢" if p_coll < 0.01 else ("🟠" if p_coll < 0.10 else "🔴")
+        c4.metric("Probabilité de collision", f"{p_coll*100:.1f} % {prob_color}")
 
         fig_hist = px.histogram(
             dist,
@@ -432,12 +458,19 @@ if dist is not None:
         )
 
     # -------- Statistiques --------------------------------------------
-    with tab_stats:
+    with tab_dash:
         st.subheader("Statistiques")
         st.write(
-            f"La distance d'arrêt moyenne est **{mean:.1f} ± {ci:.1f} m** "+
+            f"La distance d'arrêt moyenne est **{mean:.1f} ± {ci:.1f} m** "
             f"(niveau de confiance {params.conf*100:.0f} %)."
         )
+        chance = math.inf if p_coll == 0 else int(round(1 / p_coll))
+        if chance != math.inf:
+            st.write(
+                f"Avec ces conditions, il y a **1 chance sur {chance}** de ne pas s'arrêter avant l'enfant."
+            )
+        else:
+            st.write("La collision est quasi impossible.")
         q25, q50, q75 = np.percentile(dist, [25, 50, 75])
         st.markdown(
             f"Minimum : {dist.min():.1f} m  \n"
@@ -528,8 +561,7 @@ if dist is not None:
             fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 else:
-    tab_res.info("Aucun résultat pour l'instant.")
-    tab_stats.info("Aucun résultat pour l'instant.")
+    tab_dash.info("Aucun résultat pour l'instant.")
     tab_var.markdown("_Les distributions apparaîtront après simulation._")
 
 # ------------------ À propos ----------------------------------
