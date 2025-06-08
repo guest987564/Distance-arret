@@ -373,33 +373,40 @@ elif (
 else:
     dist = None
 if dist is not None:
-    mean, p95 = dist.mean(), np.percentile(dist, 95)
+    mean = dist.mean()
+    std = dist.std(ddof=1)
+    p_val = int(params.conf * 100)
+    p_quant = np.percentile(dist, p_val)
     p_coll = (dist >= child_d).mean()
 
     # -------- Graphiques et KPIs --------------------------------------
     with tab_graph:
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         c1.metric("Distance moyenne (m)", f"{mean:.1f}")
-        c2.metric("Distance P95 (m)", f"{p95:.1f}")
-        c3.metric("Probabilité de collision", f"{p_coll*100:.1f} %")
+        c2.metric("Écart type (m)", f"{std:.1f}")
+        c3.metric(f"Distance P{p_val} (m)", f"{p_quant:.1f}")
+        c4.metric("Probabilité de collision", f"{p_coll*100:.1f} %")
 
         fig_hist = px.histogram(
             dist,
             nbins=60,
-            labels={"value": "Distance d'arrêt (m)"},
+            labels={"value": "Distance d'arrêt (m)", "percent": "Fréquence (%)"},
             template="plotly_white",
             title="Distribution simulée",
+            histnorm="percent",
         )
+        fig_hist.update_yaxes(title="Fréquence (%)")
         st.plotly_chart(fig_hist, use_container_width=True)
 
         sorted_dist = np.sort(dist)
         cdf = np.arange(1, len(sorted_dist) + 1) / len(sorted_dist)
         fig_cdf = px.area(
             x=sorted_dist,
-            y=cdf,
-            labels={"x": "Distance d'arrêt (m)", "y": "Probabilité"},
+            y=cdf * 100,
+            labels={"x": "Distance d'arrêt (m)", "y": "Probabilité (%)"},
             template="plotly_white",
         )
+        fig_cdf.update_yaxes(range=[0, 100])
         fig_cdf.add_vline(
             x=child_d,
             line_dash="dash",
@@ -427,6 +434,12 @@ if dist is not None:
     # -------- Distributions internes ----------------------------------
     with tab_var:
         st.subheader("Distributions internes")
+        st.markdown(
+            "- **Vitesse réelle :** loi triangulaire\n"
+            "- **Temps de réaction :** loi de Weibull tronquée\n"
+            "- **Adhérence μ :** loi bêta bornée\n"
+            "- **Pente θ :** loi normale tronquée"
+        )
         rng = RNG
 
         with st.expander("Vitesse réelle"):
@@ -441,6 +454,7 @@ if dist is not None:
             )
             fig.add_scatter(x=xs, y=speed_pdf(xs, speed))
             fig.update_layout(title="Vitesse réelle (km/h)")
+            fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("Temps de réaction"):
@@ -455,6 +469,7 @@ if dist is not None:
             )
             fig.add_scatter(x=xs, y=tr_pdf(xs, profile))
             fig.update_layout(title="Temps de réaction (s)")
+            fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("Adhérence μ"):
@@ -470,6 +485,7 @@ if dist is not None:
             )
             fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre))
             fig.update_layout(title="Coefficient d'adhérence μ")
+            fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("Pente θ"):
@@ -485,6 +501,7 @@ if dist is not None:
             )
             fig.add_scatter(x=xs, y=theta_pdf(xs, slope))
             fig.update_layout(title="Angle de pente θ (°)")
+            fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 else:
     tab_graph.info("Aucun résultat pour l'instant.")
@@ -500,16 +517,17 @@ with tab_about:
         st.markdown(
             textwrap.dedent(
                 f"""
-                • **Vitesse compteur :** {saved.speed} km/h
-                • **Profil conducteur :** {saved.profile}  – temps de réaction médian ≈ {tr_nom:.1f} s
-                • **Chaussée :** {saved.surface}
-                • **Pneus :** {saved.tyre}
-                • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)
-                • **Pente :** {SLOPE[saved.slope]:+} ° ({saved.slope})
-                • **Confiance MC :** {saved.conf*100:.0f} %
+                • **Vitesse compteur :** {saved.speed} km/h<br>
+                • **Profil conducteur :** {saved.profile}  – temps de réaction médian ≈ {tr_nom:.1f} s<br>
+                • **Chaussée :** {saved.surface}<br>
+                • **Pneus :** {saved.tyre}<br>
+                • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)<br>
+                • **Pente :** {SLOPE[saved.slope]:+} ° ({saved.slope})<br>
+                • **Confiance MC :** {saved.conf*100:.0f} %<br>
                 • **Distance enfant :** {saved.child_d} m
                 """
-            )
+            ),
+            unsafe_allow_html=True,
         )
     else:
         st.info("Aucune simulation pour l'instant.")
