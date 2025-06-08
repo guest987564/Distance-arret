@@ -66,7 +66,7 @@ def tr_pdf(x, profile):
 # ---- Adhérence μ (Bêta bornée) ----
 SURFACE_μ = {
     "sec":     {"neuf": .85, "mi-usure": .80, "usé": .75},
-    "mouille": {"neuf": .55, "mi-usure": .47, "usé": .40},
+    "mouillé": {"neuf": .55, "mi-usure": .47, "usé": .40},
     "neige":   {"neuf": .25, "mi-usure": .25, "usé": .25},
     "glace":   {"neuf": .10, "mi-usure": .10, "usé": .10},
 }
@@ -175,13 +175,65 @@ if advanced:
     conf    = st.sidebar.slider("Confiance (%)", 0, 100, 95)/100
 else:
     PRESETS = {
-        "Ville (sec)":      {"speed": 30,  "profile": "Standard", "surface": "sec",     "tyre": "neuf",     "slope": "Plat"},
-        "Route mouillée":   {"speed": 80,  "profile": "Fatigué",  "surface": "mouillé", "tyre": "mi-usure", "slope": "Plat"},
-        "Autoroute (sec)":  {"speed": 130, "profile": "Alerte",   "surface": "sec",     "tyre": "neuf",     "slope": "Plat"},
+        "Ville – chaussée sèche": {
+            "desc": "30 km/h, conducteur standard, pneus neufs",
+            "speed": 30,
+            "profile": "Standard",
+            "surface": "sec",
+            "tyre": "neuf",
+            "slope": "Plat",
+        },
+        "Ville – chaussée mouillée": {
+            "desc": "30 km/h, conducteur fatigué, pneus mi-usure",
+            "speed": 30,
+            "profile": "Fatigué",
+            "surface": "mouillé",
+            "tyre": "mi-usure",
+            "slope": "Plat",
+        },
+        "Route – chaussée sèche": {
+            "desc": "80 km/h, conducteur standard, pneus mi-usure",
+            "speed": 80,
+            "profile": "Standard",
+            "surface": "sec",
+            "tyre": "mi-usure",
+            "slope": "Plat",
+        },
+        "Route – chaussée mouillée": {
+            "desc": "80 km/h, conducteur senior, pneus usés",
+            "speed": 80,
+            "profile": "Senior",
+            "surface": "mouillé",
+            "tyre": "usé",
+            "slope": "Plat",
+        },
+        "Autoroute – chaussée sèche": {
+            "desc": "130 km/h, conducteur alerte, pneus neufs",
+            "speed": 130,
+            "profile": "Alerte",
+            "surface": "sec",
+            "tyre": "neuf",
+            "slope": "Plat",
+        },
+        "Autoroute – chaussée mouillée": {
+            "desc": "110 km/h, conducteur standard, pneus mi-usure",
+            "speed": 110,
+            "profile": "Standard",
+            "surface": "mouillé",
+            "tyre": "mi-usure",
+            "slope": "Plat",
+        },
     }
-    preset_name = st.sidebar.radio("Préréglage", list(PRESETS))
+    options = list(PRESETS)
+    preset_name = st.sidebar.radio(
+        "Préréglage", options, captions=[PRESETS[o]["desc"] for o in options]
+    )
     pr = PRESETS[preset_name]
-    speed, profile, surface, tyre, slope = pr.values()
+    speed = pr["speed"]
+    profile = pr["profile"]
+    surface = pr["surface"]
+    tyre = pr["tyre"]
+    slope = pr["slope"]
     conf = 0.95
 
 child_d = st.sidebar.slider("Distance de l'enfant (m)",5.,100.,25.,.5)
@@ -194,10 +246,10 @@ params = {
     "tyre": tyre,
     "slope": slope,
     "conf": conf,
+    "child_d": child_d,
 }
 
-tab_res, tab_graph, tab_var, tab_about = st.tabs([
-    "📊 Résultats",
+tab_graph, tab_var, tab_about = st.tabs([
     "📈 Graphiques",
     "🔎 Variables",
     "ℹ️ À propos",
@@ -231,15 +283,13 @@ if dist is not None:
     mean, p95 = dist.mean(), np.percentile(dist, 95)
     p_coll = (dist >= child_d).mean()
 
-    # -------- KPIs --------------------------------------
-    with tab_res:
+    # -------- Graphiques et KPIs --------------------------------------
+    with tab_graph:
         c1, c2, c3 = st.columns(3)
         c1.metric("Distance moyenne (m)", f"{mean:.1f}")
         c2.metric("Distance P95 (m)", f"{p95:.1f}")
-        c3.metric("Collision", f"{p_coll*100:.1f} %")
+        c3.metric("Probabilité de collision", f"{p_coll*100:.1f} %")
 
-    # -------- Graphiques --------------------------------------
-    with tab_graph:
         fig_hist = (
             px.histogram(dist, nbins=60, labels={"value": "Distance d'arrêt (m)"})
             .update_layout(title="Distribution simulée")
@@ -263,19 +313,6 @@ if dist is not None:
         )
         st.plotly_chart(fig_cdf, use_container_width=True)
 
-        rng_scatter = np.random.default_rng(42)
-        v_s = sample_speed(speed, 1000, rng_scatter)
-        t_s = sample_tr(profile, 1000, rng_scatter)
-        μ_s = sample_mu(surface, tyre, 1000, rng_scatter)
-        fig_scatter = px.scatter(
-            x=t_s,
-            y=v_s,
-            color=μ_s,
-            color_continuous_scale="Blues",
-            labels={"x": "Temps de réaction (s)", "y": "Vitesse (km/h)", "color": "Adhérence"},
-            title="Temps de réaction vs Vitesse",
-        )
-        st.plotly_chart(fig_scatter, use_container_width=True)
         st.caption(
             f"{format(len(dist), ',').replace(',', '\u202f')} tirages – {dt:.2f}s"
         )
@@ -334,26 +371,29 @@ if dist is not None:
             fig.update_layout(title="Angle de pente θ (°)")
             st.plotly_chart(fig, use_container_width=True)
 else:
-    tab_res.info("Aucun résultat pour l'instant.")
+    tab_graph.info("Aucun résultat pour l'instant.")
     tab_var.markdown("_Les distributions apparaîtront après simulation._")
 
 # ------------------ À propos ----------------------------------
 with tab_about:
-    mu_base = base_mu(surface, tyre)        # valeur nominale μ
-    tr_nom  = PROFILE_MED[profile]                 # médiane temps réaction
-
     st.markdown("### Vos paramètres actuels")
-    st.markdown(
-        textwrap.dedent(
-            f"""
-            • **Vitesse compteur :** {speed} km/h
-            • **Profil conducteur :** {profile}  – temps de réaction médian ≈ {tr_nom:.1f} s
-            • **Chaussée :** {surface}
-            • **Pneus :** {tyre}
-            • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)
-            • **Pente :** {SLOPE[slope]:+} ° ({slope})
-            • **Confiance MC :** {conf*100:.0f} %
-            • **Distance enfant :** {child_d} m
-            """
+    saved = st.session_state.get("params")
+    if saved:
+        mu_base = base_mu(saved["surface"], saved["tyre"])
+        tr_nom = PROFILE_MED[saved["profile"]]
+        st.markdown(
+            textwrap.dedent(
+                f"""
+                • **Vitesse compteur :** {saved['speed']} km/h
+                • **Profil conducteur :** {saved['profile']}  – temps de réaction médian ≈ {tr_nom:.1f} s
+                • **Chaussée :** {saved['surface']}
+                • **Pneus :** {saved['tyre']}
+                • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)
+                • **Pente :** {SLOPE[saved['slope']]:+} ° ({saved['slope']})
+                • **Confiance MC :** {saved['conf']*100:.0f} %
+                • **Distance enfant :** {saved['child_d']} m
+                """
+            )
         )
-    )
+    else:
+        st.info("Aucune simulation pour l'instant.")
