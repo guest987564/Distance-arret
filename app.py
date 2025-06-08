@@ -351,28 +351,50 @@ params = Params(
     child_d=child_d,
 )
 
-tab_home, tab_dash, tab_var, tab_about = st.tabs([
+tab_accueil, tab_res, tab_stats, tab_var, tab_about = st.tabs([
     "🏠 Accueil",
     "📊 Tableau de bord",
+    "📋 Statistiques",
     "🔎 Variables",
     "ℹ️ À propos",
 ])
 
-with tab_home:
-    st.header("Pourquoi la distance d'arrêt ?")
+with tab_accueil:
+    st.title("🚗 Simulateur de distance d'arrêt")
+    st.markdown("---")
+
+    st.subheader("Pourquoi ce simulateur ?")
     st.write(
-        "La distance parcourue avant l'arrêt complet dépend de la vitesse et de l'adhérence."
-        " Ce simulateur permet de visualiser cet impact de manière intuitive."
+        "La **distance d'arrêt** d’un véhicule dépend de plusieurs facteurs : vitesse, "
+        "adhérence, temps de réaction… \n"
+        "Ce simulateur vous aide à visualiser et comprendre leur impact, "
+        "sans formules compliquées."
     )
+
     st.info(
-        "En France, la distance d'arrêt réglementaire à 50 km/h est d'environ 25 m. "
-        "[Service-Public.fr](https://www.service-public.fr/)"
+        "ℹ️ En France, la distance d’arrêt réglementaire à **50 km/h** est d’environ **25 m**. "
+        "[En savoir plus](https://www.service-public.fr/)."
     )
-    st.subheader("Qu'est-ce que la distance d'arrêt ?")
+
+    st.markdown("### Qu'est-ce que la distance d'arrêt ?")
     st.write(
-        "Elle correspond à la somme de la distance parcourue pendant le temps de réaction"
-        " du conducteur et de la distance de freinage. Les conditions de la chaussée,"
-        " l'état des pneus et la pente modifient fortement cette valeur."
+        "- **Distance de réaction** : distance parcourue pendant votre temps de réaction\n"
+        "- **Distance de freinage** : distance parcourue le temps que les freins agissent\n\n"
+        "La somme des deux donne la **distance d'arrêt**."
+    )
+
+    st.markdown("### Prêt à tester ?")
+    if st.button("▶️ Lancer la démo rapide"):
+        st.experimental_set_query_params(page="dashboard")
+        st.experimental_rerun()
+
+    st.markdown(
+        """
+        <small>
+        Couleurs conformes WCAG AA – navigation clavier possible – mobile friendly
+        </small>
+        """,
+        unsafe_allow_html=True,
     )
 
 # --------------------------------------------------------------
@@ -417,7 +439,7 @@ if dist is not None:
     ci = z * std
 
     # -------- Graphiques et KPIs --------------------------------------
-    with tab_dash:
+    with tab_res:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Distance moyenne (m)", f"{mean:.1f}")
         c2.metric("Écart type (m)", f"{std:.1f}")
@@ -470,7 +492,7 @@ if dist is not None:
         )
 
     # -------- Statistiques --------------------------------------------
-    with tab_dash:
+    with tab_stats:
         st.subheader("Statistiques")
         st.write(
             f"La distance d'arrêt moyenne est **{mean:.1f} ± {ci:.1f} m** "
@@ -573,7 +595,7 @@ if dist is not None:
             fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 else:
-    tab_dash.info("Aucun résultat pour l'instant.")
+    tab_res.info("Aucun résultat pour l'instant.")
     tab_var.markdown("_Les distributions apparaîtront après simulation._")
 
 # ------------------ À propos ----------------------------------
