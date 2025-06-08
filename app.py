@@ -21,15 +21,7 @@ st.set_page_config(page_title="Simulateur – Distance d’arrêt",
                    page_icon="🚗", layout="wide")
 st.title("Simulateur de distance d'arrêt")
 
-st.header("Pourquoi la distance d'arrêt ?")
-st.write(
-    "La distance parcourue avant l'arrêt complet dépend de la vitesse et de l'adhérence."
-    " Ce simulateur permet de visualiser cet impact de manière intuitive."
-)
-st.info(
-    "En France, la distance d'arrêt réglementaire à 50 km/h est d'environ 25 m. "
-    "[Service-Public.fr](https://www.service-public.fr/)"
-)
+# Le contenu d'introduction est désormais présenté dans l'onglet Accueil
 G = 9.81  # gravité (m·s-2)
 RNG = np.random.default_rng(42)
 
@@ -228,28 +220,6 @@ def run_mc(
     progress.empty()
     return np.concatenate(dist_chunks)
 
-# --------------------------------------------------------------
-# Démo rapide avec paramètres prédéfinis
-# --------------------------------------------------------------
-if st.button("🚀 Lancer la démo", key="demo"):
-    demo_params = Params(
-        speed=30,
-        profile="Standard",
-        surface="sec",
-        tyre="neuf",
-        slope="Plat",
-        conf=0.95,
-        child_d=25.0,
-    )
-    with st.spinner("Calcul rapide..."):
-        dist_demo = run_mc(demo_params, batch=5_000, max_iter=1)
-    st.session_state["dist"] = dist_demo
-    st.session_state["params"] = demo_params
-    if hasattr(st, "rerun"):
-        st.rerun()
-    elif hasattr(st, "experimental_rerun"):
-        st.experimental_rerun()
-
 # ==============================================================
 # 4. Interface Streamlit
 # ==============================================================
@@ -267,10 +237,10 @@ if advanced:
             step=5,
             help="Vitesse affichée au compteur",
         )
-        profile = st.radio(
+        profile = st.select_slider(
             "Profil conducteur",
-            list(PROFILE_MED),
-            1,
+            options=list(PROFILE_MED),
+            value="Standard",
             help="Temps de réaction médian selon le conducteur",
         )
         surface = st.select_slider(
@@ -283,7 +253,19 @@ if advanced:
             options=list(SURFACE_μ["sec"].keys()),
             help="Usure des pneumatiques",
         )
-        slope = st.radio("Pente", list(SLOPE), 0, help="Inclinaison de la route")
+        slope_options = [
+            "Montée 4°",
+            "Montée 2°",
+            "Plat",
+            "Descente 2°",
+            "Descente 4°",
+        ]
+        slope = st.select_slider(
+            "Pente",
+            options=slope_options,
+            value="Plat",
+            help="Inclinaison de la route",
+        )
         conf = st.slider("Confiance (%)", 0, 100, 95, help="Niveau de confiance") / 100
 else:
     PRESETS = {
@@ -349,7 +331,12 @@ else:
     conf = 0.95
 
 child_d = st.sidebar.slider(
-    "Distance de l'enfant (m)", 5.0, 100.0, 25.0, step=0.1, help="Position de l'enfant"
+    "Distance de l'enfant (m)",
+    5.0,
+    250.0,
+    25.0,
+    step=0.1,
+    help="Position de l'enfant",
 )
 run_sim = st.sidebar.button("Lancer la simulation")
 stop_sim = st.sidebar.button("\u23F9\ufe0f Stop")
@@ -364,11 +351,29 @@ params = Params(
     child_d=child_d,
 )
 
-tab_dash, tab_var, tab_about = st.tabs([
+tab_home, tab_dash, tab_var, tab_about = st.tabs([
+    "🏠 Accueil",
     "📊 Tableau de bord",
     "🔎 Variables",
     "ℹ️ À propos",
 ])
+
+with tab_home:
+    st.header("Pourquoi la distance d'arrêt ?")
+    st.write(
+        "La distance parcourue avant l'arrêt complet dépend de la vitesse et de l'adhérence."
+        " Ce simulateur permet de visualiser cet impact de manière intuitive."
+    )
+    st.info(
+        "En France, la distance d'arrêt réglementaire à 50 km/h est d'environ 25 m. "
+        "[Service-Public.fr](https://www.service-public.fr/)"
+    )
+    st.subheader("Qu'est-ce que la distance d'arrêt ?")
+    st.write(
+        "Elle correspond à la somme de la distance parcourue pendant le temps de réaction"
+        " du conducteur et de la distance de freinage. Les conditions de la chaussée,"
+        " l'état des pneus et la pente modifient fortement cette valeur."
+    )
 
 # --------------------------------------------------------------
 # 5. Exécution / affichage
