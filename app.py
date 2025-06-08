@@ -495,19 +495,19 @@ with tab_about:
     st.markdown("### Vos paramètres actuels")
     saved = st.session_state.get("params")
     if saved:
-        mu_base = base_mu(saved["surface"], saved["tyre"])
-        tr_nom = PROFILE_MED[saved["profile"]]
+        mu_base = base_mu(saved.surface, saved.tyre)
+        tr_nom = PROFILE_MED[saved.profile]
         st.markdown(
             textwrap.dedent(
                 f"""
-                • **Vitesse compteur :** {saved['speed']} km/h
-                • **Profil conducteur :** {saved['profile']}  – temps de réaction médian ≈ {tr_nom:.1f} s
-                • **Chaussée :** {saved['surface']}
-                • **Pneus :** {saved['tyre']}
+                • **Vitesse compteur :** {saved.speed} km/h
+                • **Profil conducteur :** {saved.profile}  – temps de réaction médian ≈ {tr_nom:.1f} s
+                • **Chaussée :** {saved.surface}
+                • **Pneus :** {saved.tyre}
                 • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)
-                • **Pente :** {SLOPE[saved['slope']]:+} ° ({saved['slope']})
-                • **Confiance MC :** {saved['conf']*100:.0f} %
-                • **Distance enfant :** {saved['child_d']} m
+                • **Pente :** {SLOPE[saved.slope]:+} ° ({saved.slope})
+                • **Confiance MC :** {saved.conf*100:.0f} %
+                • **Distance enfant :** {saved.child_d} m
                 """
             )
         )
