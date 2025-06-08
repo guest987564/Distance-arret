@@ -245,7 +245,10 @@ if st.button("🚀 Lancer la démo", key="demo"):
         dist_demo = run_mc(demo_params, batch=5_000, max_iter=1)
     st.session_state["dist"] = dist_demo
     st.session_state["params"] = demo_params
-    st.experimental_rerun()
+    if hasattr(st, "rerun"):
+        st.rerun()
+    elif hasattr(st, "experimental_rerun"):
+        st.experimental_rerun()
 
 # ==============================================================
 # 4. Interface Streamlit
