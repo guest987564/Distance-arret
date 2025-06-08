@@ -182,7 +182,6 @@ def run_mc(
     p: Params,
     batch: int = 50_000,
     max_iter: int = 20,
-    _stop_flag: Optional[Callable[[], bool]] = None,
 ) -> np.ndarray:
     """Monte-Carlo adaptatif produisant les distances d'arrêt."""
 
@@ -192,8 +191,6 @@ def run_mc(
     progress = st.progress(0)
 
     for i in range(max_iter):
-        if _stop_flag and _stop_flag():
-            raise RuntimeError("Simulation interrompue")
 
         v = sample_speed(p.speed, batch)
         t = sample_tr(p.profile, batch)
@@ -338,8 +335,11 @@ child_d = st.sidebar.slider(
     step=0.1,
     help="Position de l'enfant",
 )
-run_sim = st.sidebar.button("Lancer la simulation")
-stop_sim = st.sidebar.button("\u23F9\ufe0f Stop")
+run_sim = st.sidebar.button(
+    "Lancer la simulation",
+    type="primary",
+    use_container_width=True,
+)
 
 params = Params(
     speed=speed,
@@ -400,22 +400,12 @@ if "dist" not in st.session_state:
     st.session_state["params"] = None
 
 if run_sim:
-    st.session_state["stop"] = False
     t0 = time.time()
-    try:
-        with st.spinner("Simulation en cours..."):
-            dist = run_mc(
-                params,
-                _stop_flag=lambda: st.session_state.get("stop", False),
-            )
-    except RuntimeError as exc:
-        st.error(str(exc))
-        dist = None
+    with st.spinner("Simulation en cours..."):
+        dist = run_mc(params)
     dt = time.time() - t0
     st.session_state["dist"] = dist
     st.session_state["params"] = params
-elif stop_sim:
-    st.session_state["stop"] = True
 elif (
     st.session_state["dist"] is not None
     and st.session_state["params"] == params
