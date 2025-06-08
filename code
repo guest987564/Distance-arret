@@ -9,6 +9,7 @@ from typing import Tuple
 
 st.set_page_config(page_title="Simulateur – Distance d’arrêt",
                    page_icon="🚗", layout="wide")
+st.title("Simulateur de distance d'arrêt")
 G = 9.81  # gravité (m·s-2)
 
 # ==============================================================
@@ -111,12 +112,12 @@ def stopping_distance(v_kmh, t_r, μ, θ_deg):
 # 3. Monte-Carlo adaptatif
 # ==============================================================
 
-def run_mc(p, batch=10_000, max_iter=4):
+def run_mc(p, batch=10_000, max_iter=4, progress_callback=None):
     z = stats.norm.ppf(.5 + p["conf"]/2)       # z-score dynamique
     rel_tol = 1 - p["conf"]                    # critère largeur/ moyenne
     dist = np.empty(0)
 
-    for _ in range(max_iter):
+    for i in range(max_iter):
         v = sample_speed(p["speed"], batch)
         t = sample_tr(p["profile"], batch)
         μ = sample_mu(p["surface"], p["tyre"], p["water"], batch)
@@ -133,6 +134,8 @@ def run_mc(p, batch=10_000, max_iter=4):
 
         dist = np.concatenate((dist, stopping_distance(v, t, μ, θ)))
         sem = np.std(dist, ddof=1)/np.sqrt(len(dist))
+        if progress_callback:
+            progress_callback((i+1)/max_iter)
         if z * sem / dist.mean() < rel_tol:
             break
     return dist
@@ -164,7 +167,9 @@ tab_sim, tab_res, tab_var, tab_about = st.tabs(
 # --------------------------------------------------------------
 if run_sim:
     t0 = time.time()
-    dist = run_mc(params)
+    progress = st.progress(0.0)
+    dist = run_mc(params, progress_callback=progress.progress)
+    progress.empty()
     dt  = time.time()-t0
     mean, p95 = dist.mean(), np.percentile(dist,95)
     p_coll = (dist >= child_d).mean()
