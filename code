@@ -43,7 +43,6 @@ PROFILE_MED = {
     "Standard": 1.5,
     "Fatigué": 2.0,
     "Senior": 2.0,
-    "Lent": 2.5,
 }
 K_WEIB = 2.2
 
@@ -66,29 +65,28 @@ def tr_pdf(x, profile):
 
 # ---- Adhérence μ (Bêta bornée) ----
 SURFACE_μ = {
-    "sec":     {"neuf": .85, "usé": .75},
-    "mouille": {"neuf": .55, "usé": .40},
-    "neige":   {"neuf": .25, "usé": .25},
-    "glace":   {"neuf": .10, "usé": .10},
+    "sec":     {"neuf": .85, "mi-usure": .80, "usé": .75},
+    "mouille": {"neuf": .55, "mi-usure": .47, "usé": .40},
+    "neige":   {"neuf": .25, "mi-usure": .25, "usé": .25},
+    "glace":   {"neuf": .10, "mi-usure": .10, "usé": .10},
 }
 A_B, B_B = 2, 3
 
-def base_mu(surface, tyre, water):
+def base_mu(surface, tyre):
     μ = SURFACE_μ[surface][tyre]
-    μ -= .05 if water == "pluie"   else (.10 if water == "flaques" else 0)
     return np.clip(μ, .2, .9)
 
 def mu_bounds(μ):
     return max(.2, μ-.15), min(.9, μ+.15)
 
-def sample_mu(surface, tyre, water, n, rng=None):
-    μ0 = base_mu(surface, tyre, water)
+def sample_mu(surface, tyre, n, rng=None):
+    μ0 = base_mu(surface, tyre)
     μ_min, μ_max = mu_bounds(μ0)
     rng = rng or np.random
     return μ_min + (μ_max - μ_min) * rng.beta(A_B, B_B, size=n)
 
-def mu_pdf(x, surface, tyre, water):
-    μ0 = base_mu(surface, tyre, water)
+def mu_pdf(x, surface, tyre):
+    μ0 = base_mu(surface, tyre)
     μ_min, μ_max = mu_bounds(μ0)
     pdf = stats.beta.pdf((x-μ_min)/(μ_max-μ_min), A_B, B_B)/(μ_max-μ_min)
     pdf[(x < μ_min) | (x > μ_max)] = 0
@@ -99,7 +97,6 @@ SLOPE = {
     "Plat": 0,
     "Montée 2°": 2,
     "Montée 4°": 4,
-    "Montée 6°": 6,
     "Descente 2°": -2,
     "Descente 4°": -4,
 }
@@ -132,7 +129,7 @@ def stopping_distance(v_kmh, t_r, μ, θ_deg):
 # 3. Monte-Carlo adaptatif
 # ==============================================================
 
-def run_mc(p, batch=10_000, max_iter=10, progress_callback=None):
+def run_mc(p, batch=50_000, max_iter=20, progress_callback=None):
     z = stats.norm.ppf(.5 + p["conf"]/2)       # z-score dynamique
     rel_tol = 1 - p["conf"]                    # critère largeur/ moyenne
     dist = np.empty(0)
@@ -140,7 +137,7 @@ def run_mc(p, batch=10_000, max_iter=10, progress_callback=None):
     for i in range(max_iter):
         v = sample_speed(p["speed"], batch)
         t = sample_tr(p["profile"], batch)
-        μ = sample_mu(p["surface"], p["tyre"], p["water"], batch)
+        μ = sample_mu(p["surface"], p["tyre"], batch)
         θ = sample_theta(p["slope"], batch)
 
         ok = μ*np.cos(np.radians(θ)) + np.sin(np.radians(θ)) > 0
@@ -148,7 +145,7 @@ def run_mc(p, batch=10_000, max_iter=10, progress_callback=None):
             idx = np.where(~ok)[0]
             v[idx] = sample_speed(p["speed"], len(idx))
             t[idx] = sample_tr(p["profile"], len(idx))
-            μ[idx] = sample_mu(p["surface"], p["tyre"], p["water"], len(idx))
+            μ[idx] = sample_mu(p["surface"], p["tyre"], len(idx))
             θ[idx] = sample_theta(p["slope"], len(idx))
             ok = μ*np.cos(np.radians(θ)) + np.sin(np.radians(θ)) > 0
 
@@ -167,14 +164,26 @@ def run_mc(p, batch=10_000, max_iter=10, progress_callback=None):
 # ==============================================================
 
 st.sidebar.header("Paramètres")
+advanced = st.sidebar.toggle("Mode avancé")
 
-speed   = st.sidebar.slider("Vitesse compteur (km/h)", 30,130,90,5)
-profile = st.sidebar.selectbox("Profil conducteur", list(PROFILE_MED), 1)
-surface = st.sidebar.selectbox("Chaussée", list(SURFACE_μ), 0)
-tyre    = st.sidebar.radio("Pneus", ["neuf", "usé"], 0)
-water   = st.sidebar.radio("Eau", ["aucune","pluie","flaques"], 0)
-slope   = st.sidebar.selectbox("Pente", list(SLOPE), 0)
-conf    = st.sidebar.slider("Confiance (%)", 0, 100, 95)/100
+if advanced:
+    speed   = st.sidebar.slider("Vitesse compteur (km/h)", 30,130,90,5)
+    profile = st.sidebar.radio("Profil conducteur", list(PROFILE_MED), 1)
+    surface = st.sidebar.radio("Chaussée", list(SURFACE_μ), 0)
+    tyre    = st.sidebar.radio("Pneus", list(SURFACE_μ["sec"].keys()), 0)
+    slope   = st.sidebar.radio("Pente", list(SLOPE), 0)
+    conf    = st.sidebar.slider("Confiance (%)", 0, 100, 95)/100
+else:
+    PRESETS = {
+        "Ville (sec)":      {"speed": 30,  "profile": "Standard", "surface": "sec",     "tyre": "neuf",     "slope": "Plat"},
+        "Route mouillée":   {"speed": 80,  "profile": "Fatigué",  "surface": "mouillé", "tyre": "mi-usure", "slope": "Plat"},
+        "Autoroute (sec)":  {"speed": 130, "profile": "Alerte",   "surface": "sec",     "tyre": "neuf",     "slope": "Plat"},
+    }
+    preset_name = st.sidebar.radio("Préréglage", list(PRESETS))
+    pr = PRESETS[preset_name]
+    speed, profile, surface, tyre, slope = pr.values()
+    conf = 0.95
+
 child_d = st.sidebar.slider("Distance de l'enfant (m)",5.,100.,25.,.5)
 run_sim = st.sidebar.button("Lancer la simulation")
 
@@ -183,13 +192,13 @@ params = {
     "profile": profile,
     "surface": surface,
     "tyre": tyre,
-    "water": water,
     "slope": slope,
     "conf": conf,
 }
 
-tab_res, tab_var, tab_about = st.tabs([
+tab_res, tab_graph, tab_var, tab_about = st.tabs([
     "📊 Résultats",
+    "📈 Graphiques",
     "🔎 Variables",
     "ℹ️ À propos",
 ])
@@ -210,7 +219,10 @@ if run_sim:
     dt = time.time() - t0
     st.session_state["dist"] = dist
     st.session_state["params"] = params
-elif st.session_state["dist"] is not None and st.session_state["params"] == params:
+elif (
+    st.session_state["dist"] is not None
+    and st.session_state["params"] == params
+):
     dist = st.session_state["dist"]
     dt = 0
 else:
@@ -219,13 +231,15 @@ if dist is not None:
     mean, p95 = dist.mean(), np.percentile(dist, 95)
     p_coll = (dist >= child_d).mean()
 
-    # -------- KPIs & histogramme --------------------------------------
+    # -------- KPIs --------------------------------------
     with tab_res:
         c1, c2, c3 = st.columns(3)
         c1.metric("Distance moyenne (m)", f"{mean:.1f}")
         c2.metric("Distance P95 (m)", f"{p95:.1f}")
         c3.metric("Collision", f"{p_coll*100:.1f} %")
 
+    # -------- Graphiques --------------------------------------
+    with tab_graph:
         fig_hist = (
             px.histogram(dist, nbins=60, labels={"value": "Distance d'arrêt (m)"})
             .update_layout(title="Distribution simulée")
@@ -234,13 +248,34 @@ if dist is not None:
 
         sorted_dist = np.sort(dist)
         cdf = np.arange(1, len(sorted_dist) + 1) / len(sorted_dist)
-        fig_cdf = go.Figure(go.Scatter(x=sorted_dist, y=cdf))
+        fig_cdf = go.Figure(go.Scatter(x=sorted_dist, y=cdf, name="CDF"))
+        fig_cdf.add_vline(
+            x=child_d,
+            line_dash="dash",
+            line_width=2,
+            annotation_text="Position de l’enfant",
+            annotation_position="top",
+        )
         fig_cdf.update_layout(
-            title="Fonction de répartition",
+            title="Probabilité de s'arrêter",
             xaxis_title="Distance d'arrêt (m)",
-            yaxis_title="F(x)",
+            yaxis_title="Probabilité",
         )
         st.plotly_chart(fig_cdf, use_container_width=True)
+
+        rng_scatter = np.random.default_rng(42)
+        v_s = sample_speed(speed, 1000, rng_scatter)
+        t_s = sample_tr(profile, 1000, rng_scatter)
+        μ_s = sample_mu(surface, tyre, 1000, rng_scatter)
+        fig_scatter = px.scatter(
+            x=t_s,
+            y=v_s,
+            color=μ_s,
+            color_continuous_scale="Blues",
+            labels={"x": "Temps de réaction (s)", "y": "Vitesse (km/h)", "color": "Adhérence"},
+            title="Temps de réaction vs Vitesse",
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
         st.caption(
             f"{format(len(dist), ',').replace(',', '\u202f')} tirages – {dt:.2f}s"
         )
@@ -273,17 +308,17 @@ if dist is not None:
             st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("Adhérence μ"):
-            μ_min, μ_max = mu_bounds(base_mu(surface, tyre, water))
+            μ_min, μ_max = mu_bounds(base_mu(surface, tyre))
             xs = np.linspace(μ_min, μ_max, 300)
             fig = go.Figure()
-            data = sample_mu(surface, tyre, water, 10_000, rng)
+            data = sample_mu(surface, tyre, 10_000, rng)
             fig.add_histogram(
                 x=data,
                 nbinsx=40,
                 histnorm="probability density",
                 opacity=0.6,
             )
-            fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre, water))
+            fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre))
             fig.update_layout(title="Coefficient d'adhérence μ")
             st.plotly_chart(fig, use_container_width=True)
 
@@ -304,7 +339,7 @@ else:
 
 # ------------------ À propos ----------------------------------
 with tab_about:
-    mu_base = base_mu(surface, tyre, water)        # valeur nominale μ
+    mu_base = base_mu(surface, tyre)        # valeur nominale μ
     tr_nom  = PROFILE_MED[profile]                 # médiane temps réaction
 
     st.markdown("### Vos paramètres actuels")
@@ -315,7 +350,6 @@ with tab_about:
             • **Profil conducteur :** {profile}  – temps de réaction médian ≈ {tr_nom:.1f} s
             • **Chaussée :** {surface}
             • **Pneus :** {tyre}
-            • **Eau sur la route :** {water}
             • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)
             • **Pente :** {SLOPE[slope]:+} ° ({slope})
             • **Confiance MC :** {conf*100:.0f} %
