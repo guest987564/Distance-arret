@@ -1,0 +1,272 @@
+# app.py — Simulateur de distance d’arrêt
+import streamlit as st
+import numpy as np
+import scipy.stats as stats
+import math, time
+import plotly.graph_objects as go
+import plotly.express as px
+from typing import Tuple
+
+st.set_page_config(page_title="Simulateur – Distance d’arrêt",
+                   page_icon="🚗", layout="wide")
+G = 9.81  # gravité (m·s-2)
+
+# ==============================================================
+# 1. Lois de probabilité
+# ==============================================================
+
+# ---- Vitesse réelle (triangulaire, compteur sur-estimant) ----
+def speed_params(v_disp: float) -> Tuple[float, float, float]:
+    Δ = min(4 + 0.05 * v_disp, 8)           # tolérance UN-R39
+    return v_disp - Δ, v_disp - Δ/2, v_disp
+
+def sample_speed(v_disp: float, n: int) -> np.ndarray:
+    a, c, b = speed_params(v_disp)
+    return np.random.triangular(a, c, b, n)
+
+def speed_pdf(x, v_disp):
+    a, c, b = speed_params(v_disp)
+    return np.where(
+        (x >= a) & (x <= b),
+        np.where(x < c,
+                 2*(x-a)/((b-a)*(c-a)),
+                 2*(b-x)/((b-a)*(b-c))),
+        0)
+
+# ---- Temps de réaction (Weibull tronqué) ----
+PROFILE_MED = {"alerte": .9, "standard": 1.5, "fatigue": 2.,
+               "senior": 2., "worst": 2.5}
+K_WEIB = 2.2
+
+def weib_scale(med):               # λ pour médiane donnée
+    return med / (math.log(2)**(1/K_WEIB))
+
+def sample_tr(profile, n):
+    lam = weib_scale(PROFILE_MED[profile])
+    return np.clip(stats.weibull_min.rvs(K_WEIB, scale=lam, size=n), .3, 3)
+
+def tr_pdf(x, profile):
+    lam = weib_scale(PROFILE_MED[profile])
+    pdf = stats.weibull_min.pdf(x, K_WEIB, scale=lam)
+    pdf[(x < .3) | (x > 3)] = 0
+    return pdf
+
+# ---- Adhérence μ (Bêta bornée) ----
+SURFACE_μ = {
+    "sec":     {"neuf": .85, "use": .75},
+    "mouille": {"neuf": .55, "use": .40},
+    "neige":   {"neuf": .25, "use": .25},
+    "glace":   {"neuf": .10, "use": .10},
+}
+A_B, B_B = 2, 3
+
+def base_mu(surface, tyre, water):
+    μ = SURFACE_μ[surface][tyre]
+    μ -= .05 if water == "pluie"   else (.10 if water == "flaques" else 0)
+    return np.clip(μ, .2, .9)
+
+def mu_bounds(μ):
+    return max(.2, μ-.15), min(.9, μ+.15)
+
+def sample_mu(surface, tyre, water, n):
+    μ0 = base_mu(surface, tyre, water)
+    μ_min, μ_max = mu_bounds(μ0)
+    return μ_min + (μ_max-μ_min)*stats.beta.rvs(A_B, B_B, size=n)
+
+def mu_pdf(x, surface, tyre, water):
+    μ0 = base_mu(surface, tyre, water)
+    μ_min, μ_max = mu_bounds(μ0)
+    pdf = stats.beta.pdf((x-μ_min)/(μ_max-μ_min), A_B, B_B)/(μ_max-μ_min)
+    pdf[(x < μ_min) | (x > μ_max)] = 0
+    return pdf
+
+# ---- Pente θ (normale tronquée ±1° autour du centre) ----
+SLOPE = {"plat": 0, "rampe2": 2, "rampe4": 4, "rampe6": 6,
+         "desc2": -2, "desc4": -4}
+
+def sample_theta(cat, n):
+    μ = SLOPE[cat]; a, b = (-1)/.5, (1)/.5
+    return stats.truncnorm.rvs(a, b, loc=μ, scale=.5, size=n)
+
+def theta_pdf(x, cat):
+    μ = SLOPE[cat]; a, b = (-1)/.5, (1)/.5
+    pdf = stats.truncnorm.pdf(x, a, b, loc=μ, scale=.5)
+    pdf[(x < μ-1) | (x > μ+1)] = 0
+    return pdf
+
+# ==============================================================
+# 2. Modèle physique (distance d’arrêt)
+# ==============================================================
+
+def stopping_distance(v_kmh, t_r, μ, θ_deg):
+    v_ms = v_kmh / 3.6                        # conversion km/h → m/s
+    θ = np.radians(θ_deg)
+    denom = 2*G*(μ*np.cos(θ) + np.sin(θ))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        dist = v_ms * t_r + (v_ms**2) / denom   # réaction + freinage
+    dist[denom <= 0] = np.inf
+    return dist
+
+# ==============================================================
+# 3. Monte-Carlo adaptatif
+# ==============================================================
+
+def run_mc(p, batch=10_000, max_iter=4):
+    z = stats.norm.ppf(.5 + p["conf"]/2)       # z-score dynamique
+    rel_tol = 1 - p["conf"]                    # critère largeur/ moyenne
+    dist = np.empty(0)
+
+    for _ in range(max_iter):
+        v = sample_speed(p["speed"], batch)
+        t = sample_tr(p["profile"], batch)
+        μ = sample_mu(p["surface"], p["tyre"], p["water"], batch)
+        θ = sample_theta(p["slope"], batch)
+
+        ok = μ*np.cos(np.radians(θ)) + np.sin(np.radians(θ)) > 0
+        while not ok.all():                    # resampling invalid combos
+            idx = np.where(~ok)[0]
+            v[idx] = sample_speed(p["speed"], len(idx))
+            t[idx] = sample_tr(p["profile"], len(idx))
+            μ[idx] = sample_mu(p["surface"], p["tyre"], p["water"], len(idx))
+            θ[idx] = sample_theta(p["slope"], len(idx))
+            ok = μ*np.cos(np.radians(θ)) + np.sin(np.radians(θ)) > 0
+
+        dist = np.concatenate((dist, stopping_distance(v, t, μ, θ)))
+        sem = np.std(dist, ddof=1)/np.sqrt(len(dist))
+        if z * sem / dist.mean() < rel_tol:
+            break
+    return dist
+
+# ==============================================================
+# 4. Interface Streamlit
+# ==============================================================
+
+st.sidebar.header("Paramètres")
+
+speed   = st.sidebar.slider("Vitesse compteur (km/h)", 30,130,90,5)
+profile = st.sidebar.selectbox("Profil conducteur", list(PROFILE_MED), 1)
+surface = st.sidebar.selectbox("Chaussée", list(SURFACE_μ), 0)
+tyre    = st.sidebar.radio("Pneus", ["neuf","use"], 0)
+water   = st.sidebar.radio("Eau", ["aucune","pluie","flaques"], 0)
+slope   = st.sidebar.selectbox("Pente (+ montée)", list(SLOPE), 0)
+conf    = st.sidebar.slider("Confiance (%)", 90,99,95)/100
+child_d = st.sidebar.slider("Distance de l'enfant (m)",5.,100.,25.,.5)
+run_sim = st.sidebar.button("Lancer la simulation")
+
+params = {"speed":speed,"profile":profile,"surface":surface,"tyre":tyre,
+          "water":water,"slope":slope,"conf":conf}
+
+tab_sim, tab_res, tab_var, tab_about = st.tabs(
+        ["🚗 Simulation","📊 Résultats","🔍 Variables","ℹ️ À propos"])
+
+# --------------------------------------------------------------
+# 5. Exécution / affichage
+# --------------------------------------------------------------
+if run_sim:
+    t0 = time.time()
+    dist = run_mc(params)
+    dt  = time.time()-t0
+    mean, p95 = dist.mean(), np.percentile(dist,95)
+    p_coll = (dist >= child_d).mean()
+
+    # -------- Animation ------------------------------------------------
+    with tab_sim:
+        frames, xmax = 30, max(child_d, p95)*1.2
+        car_x = np.linspace(0,xmax,frames)
+        frames_data = [go.Frame(data=[go.Scatter(x=[car_x[i]],y=[0],
+                      mode="markers",marker=dict(size=18,color="blue")),
+                      go.Scatter(x=[child_d],y=[0],mode="markers",
+                      marker=dict(size=18,color="red"))],
+                      name=str(i)) for i in range(frames)]
+        layout = go.Layout(xaxis=dict(range=[-5,xmax],title="Position (m)"),
+                           yaxis=dict(visible=False), showlegend=False,
+                           updatemenus=[dict(type="buttons",
+                             buttons=[dict(label="▶️ Rejouer",method="animate",
+                               args=[None,{"frame":{"duration":100,"redraw":True},
+                                           "fromcurrent":True}])])])
+        fig = go.Figure(data=frames_data[0].data, layout=layout,
+                        frames=frames_data)
+        st.plotly_chart(fig, use_container_width=True)
+        st.markdown(f"**Probabilité de collision :** "
+                    f"**{p_coll*100:.1f} %**  "
+                    f"({len(dist):,} tirages – {dt:.2f}s)")
+
+    # -------- KPIs & histogramme --------------------------------------
+    with tab_res:
+        c1,c2,c3 = st.columns(3)
+        c1.metric("Distance moyenne (m)", f"{mean:.1f}")
+        c2.metric("Distance P95 (m)",     f"{p95:.1f}")
+        c3.metric("Collision",            f"{p_coll*100:.1f} %")
+        st.plotly_chart(px.histogram(dist, nbins=60,
+                         labels={"value":"Distance d'arrêt (m)"})
+                         .update_layout(title="Distribution simulée"),
+                         use_container_width=True)
+
+    # -------- Distributions internes ----------------------------------
+    with tab_var:
+        st.subheader("Distributions internes")
+        s1,s2,s3,s4 = st.tabs(
+            ["Vitesse réelle","Temps réaction","Adhérence μ","Pente θ"])
+        # vitesse
+        with s1:
+            xs = np.linspace(speed_params(speed)[0], speed, 300)
+            fig = go.Figure()
+            fig.add_histogram(x=sample_speed(speed,10_000), nbinsx=40,
+                              histnorm="probability density", opacity=.6)
+            fig.add_scatter(x=xs, y=speed_pdf(xs,speed))
+            fig.update_layout(title="Vitesse réelle (km/h)")
+            st.plotly_chart(fig,use_container_width=True)
+        # tr
+        with s2:
+            xs = np.linspace(.3,3,300)
+            fig = go.Figure()
+            fig.add_histogram(x=sample_tr(profile,10_000), nbinsx=40,
+                              histnorm="probability density", opacity=.6)
+            fig.add_scatter(x=xs, y=tr_pdf(xs,profile))
+            fig.update_layout(title="Temps de réaction (s)")
+            st.plotly_chart(fig,use_container_width=True)
+        # μ
+        with s3:
+            μ_min, μ_max = mu_bounds(base_mu(surface,tyre,water))
+            xs = np.linspace(μ_min, μ_max, 300)
+            fig = go.Figure()
+            fig.add_histogram(x=sample_mu(surface,tyre,water,10_000),
+                              nbinsx=40, histnorm="probability density",
+                              opacity=.6)
+            fig.add_scatter(x=xs,y=mu_pdf(xs,surface,tyre,water))
+            fig.update_layout(title="Coefficient d'adhérence μ")
+            st.plotly_chart(fig,use_container_width=True)
+        # θ
+        with s4:
+            μθ = SLOPE[slope]
+            xs = np.linspace(μθ-1, μθ+1, 300)
+            fig = go.Figure()
+            fig.add_histogram(x=sample_theta(slope,10_000), nbinsx=40,
+                              histnorm="probability density", opacity=.6)
+            fig.add_scatter(x=xs, y=theta_pdf(xs,slope))
+            fig.update_layout(title="Angle de pente θ (°)")
+            st.plotly_chart(fig,use_container_width=True)
+else:
+    tab_sim.write("Cliquez sur **Lancer la simulation**.")
+    tab_res.info("Aucun résultat pour l'instant.")
+    tab_var.markdown("_Les distributions apparaîtront après simulation._")
+
+# ------------------ À propos ----------------------------------
+with tab_about:
+    mu_base = base_mu(surface, tyre, water)        # valeur nominale μ
+    tr_nom  = PROFILE_MED[profile]                 # médiane temps réaction
+
+    st.markdown("### Vos paramètres actuels")
+    st.markdown(
+        f"""
+        • **Vitesse compteur :** {speed} km/h  
+        • **Profil conducteur :** {profile}  – temps de réaction médian ≈ {tr_nom:.1f} s  
+        • **Chaussée :** {surface}  
+        • **Pneus :** {tyre}  
+        • **Eau sur la route :** {water}  
+        • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)  
+        • **Pente :** {SLOPE[slope]:+} ° ({slope})  
+        • **Confiance MC :** {conf*100:.0f} %  
+        • **Distance enfant :** {child_d} m
+        """
+    )
