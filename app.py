@@ -46,21 +46,6 @@ class Params:
     conf: float
     child_d: float
 
-if st.button("🚀 Lancer la démo", key="demo"):
-    demo_params = Params(
-        speed=30,
-        profile="Standard",
-        surface="sec",
-        tyre="neuf",
-        slope="Plat",
-        conf=0.95,
-        child_d=25.0,
-    )
-    with st.spinner("Calcul rapide..."):
-        dist_demo = run_mc(demo_params, batch=5_000, max_iter=1)
-    st.session_state["dist"] = dist_demo
-    st.session_state["params"] = demo_params
-    st.experimental_rerun()
 
 # ==============================================================
 # 1. Lois de probabilité
@@ -242,6 +227,25 @@ def run_mc(
             break
     progress.empty()
     return np.concatenate(dist_chunks)
+
+# --------------------------------------------------------------
+# Démo rapide avec paramètres prédéfinis
+# --------------------------------------------------------------
+if st.button("🚀 Lancer la démo", key="demo"):
+    demo_params = Params(
+        speed=30,
+        profile="Standard",
+        surface="sec",
+        tyre="neuf",
+        slope="Plat",
+        conf=0.95,
+        child_d=25.0,
+    )
+    with st.spinner("Calcul rapide..."):
+        dist_demo = run_mc(demo_params, batch=5_000, max_iter=1)
+    st.session_state["dist"] = dist_demo
+    st.session_state["params"] = demo_params
+    st.experimental_rerun()
 
 # ==============================================================
 # 4. Interface Streamlit
