@@ -439,11 +439,11 @@ if dist is not None:
             f"(niveau de confiance {params.conf*100:.0f} %)."
         )
         q25, q50, q75 = np.percentile(dist, [25, 50, 75])
-        st.write(
-            f"Minimum : {dist.min():.1f} m\n"
-            f"1er quartile : {q25:.1f} m\n"
-            f"Médiane : {q50:.1f} m\n"
-            f"3e quartile : {q75:.1f} m\n"
+        st.markdown(
+            f"Minimum : {dist.min():.1f} m  \n"
+            f"1er quartile : {q25:.1f} m  \n"
+            f"Médiane : {q50:.1f} m  \n"
+            f"3e quartile : {q75:.1f} m  \n"
             f"Maximum : {dist.max():.1f} m"
         )
         fig_box = px.box(
