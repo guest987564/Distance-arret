@@ -435,12 +435,41 @@ if dist is not None:
         fig_hist = px.histogram(
             dist,
             nbins=60,
-            labels={"value": "Distance d'arrêt (m)", "percent": "Fréquence (%)"},
-            template="plotly_white",
-            title="Distribution simulée",
             histnorm="percent",
+            labels={
+                "value": "Distance d'arrêt (m)",
+                "percent": "Pourcentage de tirages (%)",
+            },
+            template="plotly_white",
         )
-        fig_hist.update_yaxes(title="Fréquence (%)")
+        fig_hist.update_layout(
+            title_text="Répartition des distances d'arrêt observées",
+            title_x=0.5,
+            title_font_size=18,
+            xaxis_title="Distance d'arrêt (m)",
+            yaxis_title="Pourcentage de tirages (%)",
+            legend_title_text="",
+            annotations=[
+                dict(
+                    text=(
+                        f"Conditions : {params.speed} km/h, "
+                        f"{params.surface}, pneus {params.tyre}"
+                    ),
+                    x=0.5,
+                    y=-0.15,
+                    xref="paper",
+                    yref="paper",
+                    showarrow=False,
+                    font_size=12,
+                )
+            ],
+            meta={
+                "description": (
+                    "Histogramme montrant la distribution des distances "
+                    "d'arrêt en pourcentage des tirages."
+                )
+            },
+        )
         st.plotly_chart(fig_hist, use_container_width=True)
 
         sorted_dist = np.sort(dist)
@@ -448,7 +477,7 @@ if dist is not None:
         fig_cdf = px.area(
             x=sorted_dist,
             y=cdf * 100,
-            labels={"x": "Distance d'arrêt (m)", "y": "Probabilité (%)"},
+            labels={"x": "Distance d'arrêt (m)", "y": "Probabilité cumulée (%)"},
             template="plotly_white",
         )
         fig_cdf.update_yaxes(range=[0, 100])
@@ -469,7 +498,29 @@ if dist is not None:
             opacity=0.2,
             line_width=0,
         )
-        fig_cdf.update_layout(title="Probabilité cumulée de collision")
+        fig_cdf.update_layout(
+            title_text="Probabilité qu’un véhicule atteigne l’enfant avant l’arrêt",
+            title_x=0.5,
+            xaxis_title="Distance d'arrêt (m)",
+            yaxis_title="Probabilité cumulée (%)",
+            legend_title_text="",
+            annotations=[
+                dict(
+                    text=f"Niveau de confiance : {int(params.conf*100)} %",
+                    x=0.5,
+                    y=-0.15,
+                    xref="paper",
+                    yref="paper",
+                    showarrow=False,
+                    font_size=12,
+                )
+            ],
+            meta={
+                "description": (
+                    "Courbe de probabilité cumulée de collision selon la distance d'arrêt."
+                )
+            },
+        )
         st.plotly_chart(fig_cdf, use_container_width=True)
 
         st.caption(
@@ -528,8 +579,25 @@ if dist is not None:
                 opacity=0.6,
                 template="plotly_white",
             )
-            fig.add_scatter(x=xs, y=speed_pdf(xs, speed))
-            fig.update_layout(title="Vitesse réelle (km/h)")
+            fig.update_traces(name="Simulation")
+            fig.add_scatter(x=xs, y=speed_pdf(xs, speed), name="Densité théorique")
+            fig.update_layout(
+                title_text="Vitesse réelle (km/h)",
+                title_x=0.5,
+                legend=dict(
+                    title="Courbes",
+                    orientation="v",
+                    x=1.02,
+                    y=1,
+                    bordercolor="black",
+                    borderwidth=1,
+                ),
+                meta={
+                    "description": (
+                        "Histogramme simulé et densité théorique de la vitesse réelle."
+                    )
+                },
+            )
             fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 
@@ -543,8 +611,25 @@ if dist is not None:
                 opacity=0.6,
                 template="plotly_white",
             )
-            fig.add_scatter(x=xs, y=tr_pdf(xs, profile))
-            fig.update_layout(title="Temps de réaction (s)")
+            fig.update_traces(name="Simulation")
+            fig.add_scatter(x=xs, y=tr_pdf(xs, profile), name="Densité théorique")
+            fig.update_layout(
+                title_text="Temps de réaction (s)",
+                title_x=0.5,
+                legend=dict(
+                    title="Courbes",
+                    orientation="v",
+                    x=1.02,
+                    y=1,
+                    bordercolor="black",
+                    borderwidth=1,
+                ),
+                meta={
+                    "description": (
+                        "Histogramme simulé et densité théorique du temps de réaction."
+                    )
+                },
+            )
             fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 
@@ -559,8 +644,25 @@ if dist is not None:
                 opacity=0.6,
                 template="plotly_white",
             )
-            fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre))
-            fig.update_layout(title="Coefficient d'adhérence μ")
+            fig.update_traces(name="Simulation")
+            fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre), name="Densité théorique")
+            fig.update_layout(
+                title_text="Coefficient d'adhérence μ",
+                title_x=0.5,
+                legend=dict(
+                    title="Courbes",
+                    orientation="v",
+                    x=1.02,
+                    y=1,
+                    bordercolor="black",
+                    borderwidth=1,
+                ),
+                meta={
+                    "description": (
+                        "Histogramme simulé et densité théorique du coefficient d'adhérence."
+                    )
+                },
+            )
             fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 
@@ -575,8 +677,25 @@ if dist is not None:
                 opacity=0.6,
                 template="plotly_white",
             )
-            fig.add_scatter(x=xs, y=theta_pdf(xs, slope))
-            fig.update_layout(title="Angle de pente θ (°)")
+            fig.update_traces(name="Simulation")
+            fig.add_scatter(x=xs, y=theta_pdf(xs, slope), name="Densité théorique")
+            fig.update_layout(
+                title_text="Angle de pente θ (°)",
+                title_x=0.5,
+                legend=dict(
+                    title="Courbes",
+                    orientation="v",
+                    x=1.02,
+                    y=1,
+                    bordercolor="black",
+                    borderwidth=1,
+                ),
+                meta={
+                    "description": (
+                        "Histogramme simulé et densité théorique de la pente." 
+                    )
+                },
+            )
             fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 else:
