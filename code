@@ -50,12 +50,17 @@ def weib_scale(med):               # λ pour médiane donnée
     return med / (math.log(2)**(1/K_WEIB))
 
 def sample_tr(profile, n, rng=None):
+    """Sample reaction times from a truncated Weibull distribution."""
     lam = weib_scale(PROFILE_MED[profile])
-    return np.clip(
-        stats.weibull_min.rvs(K_WEIB, scale=lam, size=n, random_state=rng),
-        0.3,
-        3,
-    )
+    rng = rng or np.random
+    x = stats.weibull_min.rvs(K_WEIB, scale=lam, size=n, random_state=rng)
+    mask = (x < 0.3) | (x > 3)
+    while mask.any():
+        x[mask] = stats.weibull_min.rvs(
+            K_WEIB, scale=lam, size=mask.sum(), random_state=rng
+        )
+        mask = (x < 0.3) | (x > 3)
+    return x
 
 def tr_pdf(x, profile):
     lam = weib_scale(PROFILE_MED[profile])
