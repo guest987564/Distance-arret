@@ -438,16 +438,15 @@ if dist is not None:
             histnorm="percent",
             labels={
                 "value": "Distance d'arrêt (m)",
-                "percent": "Pourcentage de tirages (%)",
+                "percent": "Part des simulations (%)",
             },
             template="plotly_white",
         )
         fig_hist.update_layout(
-            title_text="Répartition des distances d'arrêt observées",
-            title_x=0.5,
+            title={"text": "Répartition des distances d'arrêt observées", "x": 0.5},
             title_font_size=18,
             xaxis_title="Distance d'arrêt (m)",
-            yaxis_title="Pourcentage de tirages (%)",
+            yaxis_title="Part des simulations (%)",
             legend_title_text="",
             annotations=[
                 dict(
@@ -456,17 +455,18 @@ if dist is not None:
                         f"{params.surface}, pneus {params.tyre}"
                     ),
                     x=0.5,
-                    y=-0.15,
+                    y=-0.25,
                     xref="paper",
                     yref="paper",
                     showarrow=False,
                     font_size=12,
                 )
             ],
+            margin=dict(b=80),
             meta={
                 "description": (
                     "Histogramme montrant la distribution des distances "
-                    "d'arrêt en pourcentage des tirages."
+                    "d'arrêt en pourcentage des simulations."
                 )
             },
         )
@@ -499,8 +499,7 @@ if dist is not None:
             line_width=0,
         )
         fig_cdf.update_layout(
-            title_text="Probabilité qu’un véhicule atteigne l’enfant avant l’arrêt",
-            title_x=0.5,
+            title={"text": "Probabilité qu’un véhicule atteigne l’enfant avant l’arrêt", "x": 0.5},
             xaxis_title="Distance d'arrêt (m)",
             yaxis_title="Probabilité cumulée (%)",
             legend_title_text="",
@@ -508,13 +507,14 @@ if dist is not None:
                 dict(
                     text=f"Niveau de confiance : {int(params.conf*100)} %",
                     x=0.5,
-                    y=-0.15,
+                    y=-0.25,
                     xref="paper",
                     yref="paper",
                     showarrow=False,
                     font_size=12,
                 )
             ],
+            margin=dict(b=80),
             meta={
                 "description": (
                     "Courbe de probabilité cumulée de collision selon la distance d'arrêt."
