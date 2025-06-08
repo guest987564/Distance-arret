@@ -443,25 +443,13 @@ if dist is not None:
             template="plotly_white",
         )
         fig_hist.update_layout(
-            title={"text": "Répartition des distances d'arrêt observées", "x": 0.5},
+            title={"text": "Répartition des distances d'arrêt observées", "x": 0},
             title_font_size=18,
             xaxis_title="Distance d'arrêt (m)",
             yaxis_title="Part des simulations (%)",
             legend_title_text="",
-            annotations=[
-                dict(
-                    text=(
-                        f"Conditions : {params.speed} km/h, "
-                        f"{params.surface}, pneus {params.tyre}"
-                    ),
-                    x=0.5,
-                    y=-0.25,
-                    xref="paper",
-                    yref="paper",
-                    showarrow=False,
-                    font_size=12,
-                )
-            ],
+            showlegend=False,
+            annotations=[],
             margin=dict(b=80),
             meta={
                 "description": (
@@ -499,21 +487,12 @@ if dist is not None:
             line_width=0,
         )
         fig_cdf.update_layout(
-            title={"text": "Probabilité qu’un véhicule atteigne l’enfant avant l’arrêt", "x": 0.5},
+            title={"text": "Probabilité qu’un véhicule atteigne l’enfant avant l’arrêt", "x": 0},
             xaxis_title="Distance d'arrêt (m)",
             yaxis_title="Probabilité cumulée (%)",
             legend_title_text="",
-            annotations=[
-                dict(
-                    text=f"Niveau de confiance : {int(params.conf*100)} %",
-                    x=0.5,
-                    y=-0.25,
-                    xref="paper",
-                    yref="paper",
-                    showarrow=False,
-                    font_size=12,
-                )
-            ],
+            showlegend=False,
+            annotations=[],
             margin=dict(b=80),
             meta={
                 "description": (
