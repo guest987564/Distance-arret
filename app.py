@@ -179,8 +179,8 @@ def run_mc(
     p: Params,
     batch: int = 50_000,
     max_iter: int = 20,
-    progress_callback: Optional[Callable[[int], None]] = None,
-    stop_flag: Optional[Callable[[], bool]] = None,
+    _progress_callback: Optional[Callable[[int], None]] = None,
+    _stop_flag: Optional[Callable[[], bool]] = None,
 ) -> np.ndarray:
     """Monte-Carlo adaptatif produisant les distances d'arrêt."""
 
@@ -189,7 +189,7 @@ def run_mc(
     dist_chunks = []
 
     for i in range(max_iter):
-        if stop_flag and stop_flag():
+        if _stop_flag and _stop_flag():
             raise RuntimeError("Simulation interrompue")
 
         v = sample_speed(p.speed, batch)
@@ -211,8 +211,8 @@ def run_mc(
         dist_chunks.append(stopping_distance(v, t, μ, θ))
         dist_all = np.concatenate(dist_chunks)
         sem = np.std(dist_all, ddof=1) / np.sqrt(len(dist_all))
-        if progress_callback:
-            progress_callback(int((i + 1) / max_iter * 100))
+        if _progress_callback:
+            _progress_callback(int((i + 1) / max_iter * 100))
         if z * sem / dist_all.mean() < rel_tol:
             break
     return np.concatenate(dist_chunks)
@@ -352,8 +352,8 @@ if run_sim:
         with st.spinner("Simulation en cours..."):
             dist = run_mc(
                 params,
-                progress_callback=progress.progress,
-                stop_flag=lambda: st.session_state.get("stop", False),
+                _progress_callback=progress.progress,
+                _stop_flag=lambda: st.session_state.get("stop", False),
             )
     except RuntimeError as exc:
         st.error(str(exc))
