@@ -35,8 +35,13 @@ def speed_pdf(x, v_disp):
         0)
 
 # ---- Temps de réaction (Weibull tronqué) ----
-PROFILE_MED = {"alerte": .9, "standard": 1.5, "fatigue": 2.,
-               "senior": 2., "worst": 2.5}
+PROFILE_MED = {
+    "Alerte": 0.9,
+    "Standard": 1.5,
+    "Fatigué": 2.0,
+    "Senior": 2.0,
+    "Lent": 2.5,
+}
 K_WEIB = 2.2
 
 def weib_scale(med):               # λ pour médiane donnée
@@ -82,8 +87,14 @@ def mu_pdf(x, surface, tyre, water):
     return pdf
 
 # ---- Pente θ (normale tronquée ±1° autour du centre) ----
-SLOPE = {"plat": 0, "rampe2": 2, "rampe4": 4, "rampe6": 6,
-         "desc2": -2, "desc4": -4}
+SLOPE = {
+    "Plat": 0,
+    "Montée 2°": 2,
+    "Montée 4°": 4,
+    "Montée 6°": 6,
+    "Descente 2°": -2,
+    "Descente 4°": -4,
+}
 
 def sample_theta(cat, n):
     μ = SLOPE[cat]; a, b = (-1)/.5, (1)/.5
@@ -112,7 +123,7 @@ def stopping_distance(v_kmh, t_r, μ, θ_deg):
 # 3. Monte-Carlo adaptatif
 # ==============================================================
 
-def run_mc(p, batch=10_000, max_iter=4, progress_callback=None):
+def run_mc(p, batch=50_000, max_iter=10, progress_callback=None):
     z = stats.norm.ppf(.5 + p["conf"]/2)       # z-score dynamique
     rel_tol = 1 - p["conf"]                    # critère largeur/ moyenne
     dist = np.empty(0)
@@ -151,16 +162,24 @@ profile = st.sidebar.selectbox("Profil conducteur", list(PROFILE_MED), 1)
 surface = st.sidebar.selectbox("Chaussée", list(SURFACE_μ), 0)
 tyre    = st.sidebar.radio("Pneus", ["neuf","use"], 0)
 water   = st.sidebar.radio("Eau", ["aucune","pluie","flaques"], 0)
-slope   = st.sidebar.selectbox("Pente (+ montée)", list(SLOPE), 0)
-conf    = st.sidebar.slider("Confiance (%)", 90,99,95)/100
+slope   = st.sidebar.selectbox("Pente", list(SLOPE), 0)
+conf    = st.sidebar.slider("Confiance (%)", 0, 100, 95)/100
 child_d = st.sidebar.slider("Distance de l'enfant (m)",5.,100.,25.,.5)
 run_sim = st.sidebar.button("Lancer la simulation")
 
-params = {"speed":speed,"profile":profile,"surface":surface,"tyre":tyre,
-          "water":water,"slope":slope,"conf":conf}
+params = {
+    "speed": speed,
+    "profile": profile,
+    "surface": surface,
+    "tyre": tyre,
+    "water": water,
+    "slope": slope,
+    "conf": conf,
+}
 
-tab_sim, tab_res, tab_var, tab_about = st.tabs(
-        ["🚗 Simulation","📊 Résultats","🔍 Variables","ℹ️ À propos"])
+tab_res, tab_var, tab_about = st.tabs(
+    ["📊 Résultats", "🔍 Variables", "ℹ️ À propos"]
+)
 
 # --------------------------------------------------------------
 # 5. Exécution / affichage
@@ -174,38 +193,31 @@ if run_sim:
     mean, p95 = dist.mean(), np.percentile(dist,95)
     p_coll = (dist >= child_d).mean()
 
-    # -------- Animation ------------------------------------------------
-    with tab_sim:
-        frames, xmax = 30, max(child_d, p95)*1.2
-        car_x = np.linspace(0,xmax,frames)
-        frames_data = [go.Frame(data=[go.Scatter(x=[car_x[i]],y=[0],
-                      mode="markers",marker=dict(size=18,color="blue")),
-                      go.Scatter(x=[child_d],y=[0],mode="markers",
-                      marker=dict(size=18,color="red"))],
-                      name=str(i)) for i in range(frames)]
-        layout = go.Layout(xaxis=dict(range=[-5,xmax],title="Position (m)"),
-                           yaxis=dict(visible=False), showlegend=False,
-                           updatemenus=[dict(type="buttons",
-                             buttons=[dict(label="▶️ Rejouer",method="animate",
-                               args=[None,{"frame":{"duration":100,"redraw":True},
-                                           "fromcurrent":True}])])])
-        fig = go.Figure(data=frames_data[0].data, layout=layout,
-                        frames=frames_data)
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown(f"**Probabilité de collision :** "
-                    f"**{p_coll*100:.1f} %**  "
-                    f"({len(dist):,} tirages – {dt:.2f}s)")
 
     # -------- KPIs & histogramme --------------------------------------
     with tab_res:
-        c1,c2,c3 = st.columns(3)
+        c1, c2, c3 = st.columns(3)
         c1.metric("Distance moyenne (m)", f"{mean:.1f}")
-        c2.metric("Distance P95 (m)",     f"{p95:.1f}")
-        c3.metric("Collision",            f"{p_coll*100:.1f} %")
-        st.plotly_chart(px.histogram(dist, nbins=60,
-                         labels={"value":"Distance d'arrêt (m)"})
-                         .update_layout(title="Distribution simulée"),
-                         use_container_width=True)
+        c2.metric("Distance P95 (m)", f"{p95:.1f}")
+        c3.metric("Collision", f"{p_coll*100:.1f} %")
+
+        fig_hist = px.histogram(
+            dist,
+            nbins=60,
+            labels={"value": "Distance d'arrêt (m)"},
+        ).update_layout(title="Distribution simulée")
+        st.plotly_chart(fig_hist, use_container_width=True)
+
+        sorted_dist = np.sort(dist)
+        cdf = np.arange(1, len(sorted_dist) + 1) / len(sorted_dist)
+        fig_cdf = go.Figure(go.Scatter(x=sorted_dist, y=cdf))
+        fig_cdf.update_layout(
+            title="Fonction de répartition",
+            xaxis_title="Distance d'arrêt (m)",
+            yaxis_title="F(x)",
+        )
+        st.plotly_chart(fig_cdf, use_container_width=True)
+        st.caption(f"{len(dist):,} tirages – {dt:.2f}s")
 
     # -------- Distributions internes ----------------------------------
     with tab_var:
@@ -252,7 +264,6 @@ if run_sim:
             fig.update_layout(title="Angle de pente θ (°)")
             st.plotly_chart(fig,use_container_width=True)
 else:
-    tab_sim.write("Cliquez sur **Lancer la simulation**.")
     tab_res.info("Aucun résultat pour l'instant.")
     tab_var.markdown("_Les distributions apparaîtront après simulation._")
 
