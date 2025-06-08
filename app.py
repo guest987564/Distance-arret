@@ -383,11 +383,6 @@ with tab_accueil:
         "La somme des deux donne la **distance d'arrêt**."
     )
 
-    st.markdown("### Prêt à tester ?")
-    if st.button("▶️ Lancer la démo rapide"):
-        st.experimental_set_query_params(page="dashboard")
-        st.experimental_rerun()
-
     st.markdown(
         """
         <small>
