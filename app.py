@@ -331,8 +331,9 @@ params = Params(
     child_d=child_d,
 )
 
-tab_graph, tab_var, tab_about = st.tabs([
-    "📈 Graphiques",
+tab_res, tab_stats, tab_var, tab_about = st.tabs([
+    "📊 Résultats",
+    "📋 Statistiques",
     "🔎 Variables",
     "ℹ️ À propos",
 ])
@@ -375,9 +376,11 @@ if dist is not None:
     p_val = int(params.conf * 100)
     p_quant = np.percentile(dist, p_val)
     p_coll = (dist >= child_d).mean()
+    z = stats.norm.ppf(0.5 + params.conf / 2)
+    ci = z * std
 
     # -------- Graphiques et KPIs --------------------------------------
-    with tab_graph:
+    with tab_res:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Distance moyenne (m)", f"{mean:.1f}")
         c2.metric("Écart type (m)", f"{std:.1f}")
@@ -427,6 +430,30 @@ if dist is not None:
         st.caption(
             f"{format(len(dist), ',').replace(',', '\u202f')} tirages – {dt:.2f}s"
         )
+
+    # -------- Statistiques --------------------------------------------
+    with tab_stats:
+        st.subheader("Statistiques")
+        st.write(
+            f"La distance d'arrêt moyenne est **{mean:.1f} ± {ci:.1f} m** "+
+            f"(niveau de confiance {params.conf*100:.0f} %)."
+        )
+        q25, q50, q75 = np.percentile(dist, [25, 50, 75])
+        st.write(
+            f"Minimum : {dist.min():.1f} m\n"
+            f"1er quartile : {q25:.1f} m\n"
+            f"Médiane : {q50:.1f} m\n"
+            f"3e quartile : {q75:.1f} m\n"
+            f"Maximum : {dist.max():.1f} m"
+        )
+        fig_box = px.box(
+            dist,
+            points=False,
+            labels={"value": "Distance d'arrêt (m)"},
+            template="plotly_white",
+            title="Boîte à moustaches"
+        )
+        st.plotly_chart(fig_box, use_container_width=True)
 
     # -------- Distributions internes ----------------------------------
     with tab_var:
@@ -501,7 +528,8 @@ if dist is not None:
             fig.update_yaxes(tickformat=".0%")
             st.plotly_chart(fig, use_container_width=True)
 else:
-    tab_graph.info("Aucun résultat pour l'instant.")
+    tab_res.info("Aucun résultat pour l'instant.")
+    tab_stats.info("Aucun résultat pour l'instant.")
     tab_var.markdown("_Les distributions apparaîtront après simulation._")
 
 # ------------------ À propos ----------------------------------
