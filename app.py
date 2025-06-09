@@ -568,6 +568,7 @@ if dist is not None:
 
         with st.expander("Vitesse réelle"):
             xs = np.linspace(speed_params(speed)[0], speed, 300)
+            a, c, b = speed_params(speed)
             data = sample_speed(speed, 10_000, rng)
             fig = px.histogram(
                 data,
@@ -578,6 +579,15 @@ if dist is not None:
             )
             fig.update_traces(name="Simulation")
             fig.add_scatter(x=xs, y=speed_pdf(xs, speed), name="Densité théorique")
+            fig.add_annotation(
+                text=f"a={a:.1f} c={c:.1f} b={b:.1f}",
+                xref="paper",
+                yref="paper",
+                x=0.98,
+                y=0.95,
+                showarrow=False,
+                align="right",
+            )
             fig.update_layout(
                 title_text="Vitesse réelle (km/h)",
                 title_x=0.5,
@@ -602,6 +612,7 @@ if dist is not None:
 
         with st.expander("Temps de réaction"):
             xs = np.linspace(0.3, 3, 300)
+            lam = weib_scale(PROFILE_MED[profile])
             data = sample_tr(profile, 10_000, rng)
             fig = px.histogram(
                 data,
@@ -612,6 +623,15 @@ if dist is not None:
             )
             fig.update_traces(name="Simulation")
             fig.add_scatter(x=xs, y=tr_pdf(xs, profile), name="Densité théorique")
+            fig.add_annotation(
+                text=f"λ={lam:.2f} k={K_WEIB}",
+                xref="paper",
+                yref="paper",
+                x=0.98,
+                y=0.95,
+                showarrow=False,
+                align="right",
+            )
             fig.update_layout(
                 title_text="Temps de réaction (s)",
                 title_x=0.5,
@@ -647,6 +667,15 @@ if dist is not None:
             )
             fig.update_traces(name="Simulation")
             fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre), name="Densité théorique")
+            fig.add_annotation(
+                text=f"α={A_B} β={B_B}\n[{μ_min:.2f}, {μ_max:.2f}]",
+                xref="paper",
+                yref="paper",
+                x=0.98,
+                y=0.95,
+                showarrow=False,
+                align="right",
+            )
             fig.update_layout(
                 title_text="Coefficient d'adhérence μ",
                 title_x=0.5,
@@ -682,6 +711,15 @@ if dist is not None:
             )
             fig.update_traces(name="Simulation")
             fig.add_scatter(x=xs, y=theta_pdf(xs, slope), name="Densité théorique")
+            fig.add_annotation(
+                text=f"μ={μθ:+.1f} σ=0.5\n[{μθ-1:.1f}, {μθ+1:.1f}]",
+                xref="paper",
+                yref="paper",
+                x=0.98,
+                y=0.95,
+                showarrow=False,
+                align="right",
+            )
             fig.update_layout(
                 title_text="Angle de pente θ (°)",
                 title_x=0.5,
