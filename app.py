@@ -11,6 +11,7 @@ from typing import Callable, Optional, Tuple
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 import scipy.stats as stats
 import streamlit as st
 import textwrap
@@ -24,6 +25,13 @@ st.title("Simulateur de distance d'arrêt")
 # Le contenu d'introduction est désormais présenté dans l'onglet Accueil
 G = 9.81  # gravité (m·s-2)
 RNG = np.random.default_rng(42)
+
+# --- Thème Plotly personnalisé ------------------------------------------
+COLORWAY = ["#4E79A7", "#F28E2B", "#76B7B2"]
+pio.templates["custom"] = go.layout.Template(pio.templates["plotly_white"])
+pio.templates["custom"].layout.colorway = COLORWAY
+px.defaults.template = "custom"
+px.defaults.color_discrete_sequence = COLORWAY
 
 
 @dataclass(frozen=True)
