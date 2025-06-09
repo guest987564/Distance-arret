@@ -442,13 +442,14 @@ if dist is not None:
             },
             template="plotly_white",
         )
+        fig_hist.update_traces(name="Simulation")
         fig_hist.update_layout(
             title={"text": "Répartition des distances d'arrêt observées", "x": 0},
             title_font_size=18,
             xaxis_title="Distance d'arrêt (m)",
             yaxis_title="Part des simulations (%)",
             legend_title_text="",
-            showlegend=False,
+            showlegend=True,
             annotations=[],
             margin=dict(b=80),
             meta={
@@ -468,6 +469,7 @@ if dist is not None:
             labels={"x": "Distance d'arrêt (m)", "y": "Probabilité cumulée (%)"},
             template="plotly_white",
         )
+        fig_cdf.update_traces(name="CDF")
         fig_cdf.update_yaxes(range=[0, 100])
         fig_cdf.add_vline(
             x=child_d,
@@ -491,7 +493,7 @@ if dist is not None:
             xaxis_title="Distance d'arrêt (m)",
             yaxis_title="Probabilité cumulée (%)",
             legend_title_text="",
-            showlegend=False,
+            showlegend=True,
             annotations=[],
             margin=dict(b=80),
             meta={
@@ -535,6 +537,12 @@ if dist is not None:
             template="plotly_white",
             title="Boîte à moustaches"
         )
+        fig_box.update_layout(
+            xaxis_title="Distance d'arrêt (m)",
+            yaxis_title="Valeur",
+            showlegend=True,
+        )
+        fig_box.update_traces(name="Simulation")
         st.plotly_chart(fig_box, use_container_width=True)
 
     # -------- Distributions internes ----------------------------------
@@ -563,6 +571,8 @@ if dist is not None:
             fig.update_layout(
                 title_text="Vitesse réelle (km/h)",
                 title_x=0.5,
+                xaxis_title="Vitesse réelle (km/h)",
+                yaxis_title="Densité (%)",
                 legend=dict(
                     title="Courbes",
                     orientation="v",
@@ -595,6 +605,8 @@ if dist is not None:
             fig.update_layout(
                 title_text="Temps de réaction (s)",
                 title_x=0.5,
+                xaxis_title="Temps de réaction (s)",
+                yaxis_title="Densité (%)",
                 legend=dict(
                     title="Courbes",
                     orientation="v",
@@ -628,6 +640,8 @@ if dist is not None:
             fig.update_layout(
                 title_text="Coefficient d'adhérence μ",
                 title_x=0.5,
+                xaxis_title="Coefficient d'adhérence μ",
+                yaxis_title="Densité (%)",
                 legend=dict(
                     title="Courbes",
                     orientation="v",
@@ -661,6 +675,8 @@ if dist is not None:
             fig.update_layout(
                 title_text="Angle de pente θ (°)",
                 title_x=0.5,
+                xaxis_title="Angle de pente θ (°)",
+                yaxis_title="Densité (%)",
                 legend=dict(
                     title="Courbes",
                     orientation="v",
