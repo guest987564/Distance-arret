@@ -564,12 +564,6 @@ if dist is not None:
     # -------- Distributions internes ----------------------------------
     with tab_var:
         st.subheader("Distributions internes")
-        st.markdown(
-            "- **Vitesse réelle :** loi triangulaire\n"
-            "- **Temps de réaction :** loi de Weibull tronquée\n"
-            "- **Adhérence μ :** loi bêta bornée\n"
-            "- **Pente θ :** loi normale tronquée"
-        )
         rng = RNG
 
         with st.expander("Vitesse réelle"):
