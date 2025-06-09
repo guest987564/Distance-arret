@@ -583,10 +583,10 @@ if dist is not None:
                 text=f"a={a:.1f} c={c:.1f} b={b:.1f}",
                 xref="paper",
                 yref="paper",
-                x=0.98,
+                x=0.02,
                 y=0.95,
                 showarrow=False,
-                align="right",
+                align="left",
             )
             fig.update_layout(
                 title_text="Vitesse réelle (km/h)",
@@ -627,10 +627,10 @@ if dist is not None:
                 text=f"λ={lam:.2f} k={K_WEIB}",
                 xref="paper",
                 yref="paper",
-                x=0.98,
+                x=0.02,
                 y=0.95,
                 showarrow=False,
-                align="right",
+                align="left",
             )
             fig.update_layout(
                 title_text="Temps de réaction (s)",
@@ -671,10 +671,10 @@ if dist is not None:
                 text=f"α={A_B} β={B_B}\n[{μ_min:.2f}, {μ_max:.2f}]",
                 xref="paper",
                 yref="paper",
-                x=0.98,
+                x=0.02,
                 y=0.95,
                 showarrow=False,
-                align="right",
+                align="left",
             )
             fig.update_layout(
                 title_text="Coefficient d'adhérence μ",
@@ -715,10 +715,10 @@ if dist is not None:
                 text=f"μ={μθ:+.1f} σ=0.5\n[{μθ-1:.1f}, {μθ+1:.1f}]",
                 xref="paper",
                 yref="paper",
-                x=0.98,
+                x=0.02,
                 y=0.95,
                 showarrow=False,
-                align="right",
+                align="left",
             )
             fig.update_layout(
                 title_text="Angle de pente θ (°)",
