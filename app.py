@@ -486,15 +486,23 @@ if dist is not None:
             annotation_text="Position de l’enfant",
             annotation_position="top",
         )
-        fig_cdf.add_shape(
-            type="rect",
+        fig_cdf.add_vrect(
             x0=child_d,
             x1=sorted_dist.max(),
-            y0=0,
-            y1=1,
             fillcolor="red",
             opacity=0.2,
             line_width=0,
+            layer="below",
+        )
+        fig_cdf.add_annotation(
+            x=child_d,
+            y=0.95,
+            xref="x",
+            yref="paper",
+            xanchor="left",
+            text=f"{p_coll*100:.1f} %",
+            showarrow=False,
+            font=dict(color="red"),
         )
         fig_cdf.update_layout(
             title={"text": "Probabilité qu’un véhicule atteigne l’enfant avant l’arrêt", "x": 0},
