@@ -566,181 +566,177 @@ if dist is not None:
         st.subheader("Distributions internes")
         rng = RNG
 
-        with st.expander("Vitesse réelle"):
-            xs = np.linspace(speed_params(speed)[0], speed, 300)
-            a, c, b = speed_params(speed)
-            data = sample_speed(speed, 10_000, rng)
-            fig = px.histogram(
-                data,
-                nbins=40,
-                histnorm="probability density",
-                opacity=0.6,
-                template="plotly_white",
-            )
-            fig.update_traces(name="Simulation")
-            fig.add_scatter(x=xs, y=speed_pdf(xs, speed), name="Densité théorique")
-            fig.add_annotation(
-                text=f"a={a:.1f} c={c:.1f} b={b:.1f}",
-                xref="paper",
-                yref="paper",
-                x=0.98,
-                y=0.95,
-                showarrow=False,
-                align="right",
-            )
-            fig.update_layout(
-                title_text="Vitesse réelle (km/h)",
-                title_x=0.5,
-                xaxis_title="Vitesse réelle (km/h)",
-                yaxis_title="Densité (%)",
-                legend=dict(
-                    title="Courbes",
-                    orientation="v",
-                    x=1.02,
-                    y=1,
-                    bordercolor="black",
-                    borderwidth=1,
-                ),
-                meta={
-                    "description": (
-                        "Histogramme simulé et densité théorique de la vitesse réelle."
-                    )
-                },
-            )
-            fig.update_yaxes(tickformat=".0%")
-            st.plotly_chart(fig, use_container_width=True)
+        xs = np.linspace(speed_params(speed)[0], speed, 300)
+        a, c, b = speed_params(speed)
+        data = sample_speed(speed, 10_000, rng)
+        fig = px.histogram(
+            data,
+            nbins=40,
+            histnorm="probability density",
+            opacity=0.6,
+            template="plotly_white",
+        )
+        fig.update_traces(name="Simulation")
+        fig.add_scatter(x=xs, y=speed_pdf(xs, speed), name="Densité théorique")
+        fig.add_annotation(
+            text=f"a={a:.1f} c={c:.1f} b={b:.1f}",
+            xref="paper",
+            yref="paper",
+            x=0.02,
+            y=0.95,
+            showarrow=False,
+            align="left",
+        )
+        fig.update_layout(
+            title_text="Vitesse réelle (km/h)",
+            title_x=0.5,
+            xaxis_title="Vitesse réelle (km/h)",
+            yaxis_title="Densité (%)",
+            legend=dict(
+                title="Courbes",
+                orientation="v",
+                x=1.02,
+                y=1,
+                bordercolor="black",
+                borderwidth=1,
+            ),
+            meta={
+                "description": (
+                    "Histogramme simulé et densité théorique de la vitesse réelle."
+                )
+            },
+        )
+        fig.update_yaxes(tickformat=".0%")
+        st.plotly_chart(fig, use_container_width=True)
 
-        with st.expander("Temps de réaction"):
-            xs = np.linspace(0.3, 3, 300)
-            lam = weib_scale(PROFILE_MED[profile])
-            data = sample_tr(profile, 10_000, rng)
-            fig = px.histogram(
-                data,
-                nbins=40,
-                histnorm="probability density",
-                opacity=0.6,
-                template="plotly_white",
-            )
-            fig.update_traces(name="Simulation")
-            fig.add_scatter(x=xs, y=tr_pdf(xs, profile), name="Densité théorique")
-            fig.add_annotation(
-                text=f"λ={lam:.2f} k={K_WEIB}",
-                xref="paper",
-                yref="paper",
-                x=0.98,
-                y=0.95,
-                showarrow=False,
-                align="right",
-            )
-            fig.update_layout(
-                title_text="Temps de réaction (s)",
-                title_x=0.5,
-                xaxis_title="Temps de réaction (s)",
-                yaxis_title="Densité (%)",
-                legend=dict(
-                    title="Courbes",
-                    orientation="v",
-                    x=1.02,
-                    y=1,
-                    bordercolor="black",
-                    borderwidth=1,
-                ),
-                meta={
-                    "description": (
-                        "Histogramme simulé et densité théorique du temps de réaction."
-                    )
-                },
-            )
-            fig.update_yaxes(tickformat=".0%")
-            st.plotly_chart(fig, use_container_width=True)
+        xs = np.linspace(0.3, 3, 300)
+        lam = weib_scale(PROFILE_MED[profile])
+        data = sample_tr(profile, 10_000, rng)
+        fig = px.histogram(
+            data,
+            nbins=40,
+            histnorm="probability density",
+            opacity=0.6,
+            template="plotly_white",
+        )
+        fig.update_traces(name="Simulation")
+        fig.add_scatter(x=xs, y=tr_pdf(xs, profile), name="Densité théorique")
+        fig.add_annotation(
+            text=f"λ={lam:.2f} k={K_WEIB}",
+            xref="paper",
+            yref="paper",
+            x=0.02,
+            y=0.95,
+            showarrow=False,
+            align="left",
+        )
+        fig.update_layout(
+            title_text="Temps de réaction (s)",
+            title_x=0.5,
+            xaxis_title="Temps de réaction (s)",
+            yaxis_title="Densité (%)",
+            legend=dict(
+                title="Courbes",
+                orientation="v",
+                x=1.02,
+                y=1,
+                bordercolor="black",
+                borderwidth=1,
+            ),
+            meta={
+                "description": (
+                    "Histogramme simulé et densité théorique du temps de réaction."
+                )
+            },
+        )
+        fig.update_yaxes(tickformat=".0%")
+        st.plotly_chart(fig, use_container_width=True)
 
-        with st.expander("Adhérence μ"):
-            μ_min, μ_max = mu_bounds(base_mu(surface, tyre))
-            xs = np.linspace(μ_min, μ_max, 300)
-            data = sample_mu(surface, tyre, 10_000, rng)
-            fig = px.histogram(
-                data,
-                nbins=40,
-                histnorm="probability density",
-                opacity=0.6,
-                template="plotly_white",
-            )
-            fig.update_traces(name="Simulation")
-            fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre), name="Densité théorique")
-            fig.add_annotation(
-                text=f"α={A_B} β={B_B}\n[{μ_min:.2f}, {μ_max:.2f}]",
-                xref="paper",
-                yref="paper",
-                x=0.98,
-                y=0.95,
-                showarrow=False,
-                align="right",
-            )
-            fig.update_layout(
-                title_text="Coefficient d'adhérence μ",
-                title_x=0.5,
-                xaxis_title="Coefficient d'adhérence μ",
-                yaxis_title="Densité (%)",
-                legend=dict(
-                    title="Courbes",
-                    orientation="v",
-                    x=1.02,
-                    y=1,
-                    bordercolor="black",
-                    borderwidth=1,
-                ),
-                meta={
-                    "description": (
-                        "Histogramme simulé et densité théorique du coefficient d'adhérence."
-                    )
-                },
-            )
-            fig.update_yaxes(tickformat=".0%")
-            st.plotly_chart(fig, use_container_width=True)
+        μ_min, μ_max = mu_bounds(base_mu(surface, tyre))
+        xs = np.linspace(μ_min, μ_max, 300)
+        data = sample_mu(surface, tyre, 10_000, rng)
+        fig = px.histogram(
+            data,
+            nbins=40,
+            histnorm="probability density",
+            opacity=0.6,
+            template="plotly_white",
+        )
+        fig.update_traces(name="Simulation")
+        fig.add_scatter(x=xs, y=mu_pdf(xs, surface, tyre), name="Densité théorique")
+        fig.add_annotation(
+            text=f"α={A_B} β={B_B}\n[{μ_min:.2f}, {μ_max:.2f}]",
+            xref="paper",
+            yref="paper",
+            x=0.02,
+            y=0.95,
+            showarrow=False,
+            align="left",
+        )
+        fig.update_layout(
+            title_text="Coefficient d'adhérence μ",
+            title_x=0.5,
+            xaxis_title="Coefficient d'adhérence μ",
+            yaxis_title="Densité (%)",
+            legend=dict(
+                title="Courbes",
+                orientation="v",
+                x=1.02,
+                y=1,
+                bordercolor="black",
+                borderwidth=1,
+            ),
+            meta={
+                "description": (
+                    "Histogramme simulé et densité théorique du coefficient d'adhérence."
+                )
+            },
+        )
+        fig.update_yaxes(tickformat=".0%")
+        st.plotly_chart(fig, use_container_width=True)
 
-        with st.expander("Pente θ"):
-            μθ = SLOPE[slope]
-            xs = np.linspace(μθ - 1, μθ + 1, 300)
-            data = sample_theta(slope, 10_000, rng)
-            fig = px.histogram(
-                data,
-                nbins=40,
-                histnorm="probability density",
-                opacity=0.6,
-                template="plotly_white",
-            )
-            fig.update_traces(name="Simulation")
-            fig.add_scatter(x=xs, y=theta_pdf(xs, slope), name="Densité théorique")
-            fig.add_annotation(
-                text=f"μ={μθ:+.1f} σ=0.5\n[{μθ-1:.1f}, {μθ+1:.1f}]",
-                xref="paper",
-                yref="paper",
-                x=0.98,
-                y=0.95,
-                showarrow=False,
-                align="right",
-            )
-            fig.update_layout(
-                title_text="Angle de pente θ (°)",
-                title_x=0.5,
-                xaxis_title="Angle de pente θ (°)",
-                yaxis_title="Densité (%)",
-                legend=dict(
-                    title="Courbes",
-                    orientation="v",
-                    x=1.02,
-                    y=1,
-                    bordercolor="black",
-                    borderwidth=1,
-                ),
-                meta={
-                    "description": (
-                        "Histogramme simulé et densité théorique de la pente." 
-                    )
-                },
-            )
-            fig.update_yaxes(tickformat=".0%")
-            st.plotly_chart(fig, use_container_width=True)
+        μθ = SLOPE[slope]
+        xs = np.linspace(μθ - 1, μθ + 1, 300)
+        data = sample_theta(slope, 10_000, rng)
+        fig = px.histogram(
+            data,
+            nbins=40,
+            histnorm="probability density",
+            opacity=0.6,
+            template="plotly_white",
+        )
+        fig.update_traces(name="Simulation")
+        fig.add_scatter(x=xs, y=theta_pdf(xs, slope), name="Densité théorique")
+        fig.add_annotation(
+            text=f"μ={μθ:+.1f} σ=0.5\n[{μθ-1:.1f}, {μθ+1:.1f}]",
+            xref="paper",
+            yref="paper",
+            x=0.02,
+            y=0.95,
+            showarrow=False,
+            align="left",
+        )
+        fig.update_layout(
+            title_text="Angle de pente θ (°)",
+            title_x=0.5,
+            xaxis_title="Angle de pente θ (°)",
+            yaxis_title="Densité (%)",
+            legend=dict(
+                title="Courbes",
+                orientation="v",
+                x=1.02,
+                y=1,
+                bordercolor="black",
+                borderwidth=1,
+            ),
+            meta={
+                "description": (
+                    "Histogramme simulé et densité théorique de la pente."
+                )
+            },
+        )
+        fig.update_yaxes(tickformat=".0%")
+        st.plotly_chart(fig, use_container_width=True)
 else:
     tab_res.info("Aucun résultat pour l'instant.")
     tab_var.markdown("_Les distributions apparaîtront après simulation._")
