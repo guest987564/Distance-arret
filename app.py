@@ -19,16 +19,15 @@ import math
 import time
 import qrcode
 
-
-user_id = st.secrets["ID"]
-password = st.secrets["MDP"]
-st.write(f"ID chargé : {user_id}")
-
 st.set_page_config(
     page_title="Simulateur – Distance d’arrêt",
     page_icon="🚗",
     layout="wide",
 )
+
+user_id = st.secrets["ID"]
+password = st.secrets["MDP"]
+st.write(f"ID chargé : {user_id}")
 
 st.title("Simulateur de distance d'arrêt")
 
