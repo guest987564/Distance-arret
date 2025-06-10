@@ -79,7 +79,7 @@ PROFILE_MED = {
     "Alerte": 0.9,
     "Standard": 1.5,
     "Fatigué": 2.0,
-    "Senior": 2.0,
+    "Très fatigué": 2.0,
 }
 K_WEIB = 2.2
 
@@ -112,10 +112,10 @@ def tr_pdf(x: np.ndarray, profile: str) -> np.ndarray:
 
 # ---- Adhérence μ (Bêta bornée) ----
 SURFACE_μ = {
-    "sec":     {"neuf": .85, "mi-usure": .80, "usé": .75},
-    "mouillé": {"neuf": .55, "mi-usure": .47, "usé": .40},
-    "neige":   {"neuf": .25, "mi-usure": .25, "usé": .25},
-    "glace":   {"neuf": .10, "mi-usure": .10, "usé": .10},
+    "sec":       {"neuf": .85, "mi-usure": .80, "usé": .75},
+    "mouillée":   {"neuf": .55, "mi-usure": .47, "usé": .40},
+    "neige":     {"neuf": .25, "mi-usure": .25, "usé": .25},
+    "glace":     {"neuf": .10, "mi-usure": .10, "usé": .10},
 }
 A_B, B_B = 2, 3
 
@@ -286,7 +286,7 @@ else:
             "desc": "30 km/h, conducteur fatigué, pneus mi-usure",
             "speed": 30,
             "profile": "Fatigué",
-            "surface": "mouillé",
+            "surface": "mouillée",
             "tyre": "mi-usure",
             "slope": "Plat",
         },
@@ -299,10 +299,10 @@ else:
             "slope": "Plat",
         },
         "Route – chaussée mouillée": {
-            "desc": "80 km/h, conducteur senior, pneus usés",
+            "desc": "80 km/h, conducteur très fatigué, pneus usés",
             "speed": 80,
-            "profile": "Senior",
-            "surface": "mouillé",
+            "profile": "Très fatigué",
+            "surface": "mouillée",
             "tyre": "usé",
             "slope": "Plat",
         },
@@ -318,7 +318,7 @@ else:
             "desc": "110 km/h, conducteur standard, pneus mi-usure",
             "speed": 110,
             "profile": "Standard",
-            "surface": "mouillé",
+            "surface": "mouillée",
             "tyre": "mi-usure",
             "slope": "Plat",
         },
@@ -336,12 +336,12 @@ else:
     conf = 0.95
 
 child_d = st.sidebar.slider(
-    "Distance de l'enfant (m)",
+    "Distance de l'obstacle (m)",
     5.0,
     250.0,
     25.0,
     step=0.1,
-    help="Position de l'enfant",
+    help="Position de l'obstacle",
 )
 run_sim = st.sidebar.button(
     "Lancer la simulation",
