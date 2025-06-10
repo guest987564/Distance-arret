@@ -531,12 +531,19 @@ if dist is not None:
         else:
             st.write("La collision est quasi impossible.")
         q25, q50, q75 = np.percentile(dist, [25, 50, 75])
+        max_theo = stopping_distance(
+            np.array([params.speed]),
+            np.array([3.0]),
+            np.array([mu_bounds(base_mu(params.surface, params.tyre))[0]]),
+            np.array([SLOPE[params.slope] - 1]),
+        )[0]
         st.markdown(
             f"Minimum : {dist.min():.1f} m  \n"
             f"1er quartile : {q25:.1f} m  \n"
             f"Médiane : {q50:.1f} m  \n"
             f"3e quartile : {q75:.1f} m  \n"
-            f"Maximum : {dist.max():.1f} m"
+            f"Maximum : {dist.max():.1f} m  \n"
+            f"Maximum théorique : {max_theo:.1f} m"
         )
         fig_box = px.box(
             dist,
