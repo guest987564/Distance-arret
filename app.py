@@ -392,15 +392,6 @@ with tab_accueil:
         "La somme des deux donne la **distance d'arrêt**."
     )
 
-    st.markdown(
-        """
-        <small>
-        Couleurs conformes WCAG AA – navigation clavier possible – mobile friendly
-        </small>
-        """,
-        unsafe_allow_html=True,
-    )
-
 # --------------------------------------------------------------
 # 5. Exécution / affichage
 # --------------------------------------------------------------
