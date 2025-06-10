@@ -470,7 +470,7 @@ if dist is not None:
             xaxis_title="Distance d'arrêt (m)",
             yaxis_title="Part des simulations (%)",
             legend_title_text="",
-            showlegend=True,
+            showlegend=False,
             annotations=[],
             margin=dict(b=80),
             meta={
