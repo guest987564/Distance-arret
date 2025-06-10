@@ -463,7 +463,7 @@ if dist is not None:
             x=child_d,
             line_dash="dash",
             line_width=2,
-            annotation_text="Position de l’enfant",
+            annotation_text="Position de l'obstacle",
             annotation_position="top",
         )
         st.plotly_chart(fig_hist, use_container_width=True)
@@ -482,7 +482,7 @@ if dist is not None:
             x=child_d,
             line_dash="dash",
             line_width=2,
-            annotation_text="Position de l’enfant",
+            annotation_text="Position de l'obstacle",
             annotation_position="top",
         )
         fig_cdf.add_vrect(
@@ -504,7 +504,7 @@ if dist is not None:
             font=dict(color="red"),
         )
         fig_cdf.update_layout(
-            title={"text": "Probabilité qu’un véhicule atteigne l’enfant avant l’arrêt", "x": 0},
+            title={"text": "Probabilité qu’un véhicule atteigne l'obstacle avant l’arrêt", "x": 0},
             xaxis_title="Distance d'arrêt (m)",
             yaxis_title="Probabilité cumulée (%)",
             legend_title_text="",
@@ -533,7 +533,7 @@ if dist is not None:
         chance = math.inf if p_coll == 0 else int(round(1 / p_coll))
         if chance != math.inf:
             st.write(
-                f"Avec ces conditions, il y a **1 chance sur {chance}** de ne pas s'arrêter avant l'enfant."
+                f"Avec ces conditions, il y a **1 chance sur {chance}** de ne pas s'arrêter avant l'obstacle."
             )
         else:
             st.write("La collision est quasi impossible.")
@@ -779,7 +779,7 @@ with tab_about:
                 • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)<br>
                 • **Pente :** {SLOPE[saved.slope]:+} ° ({saved.slope})<br>
                 • **Confiance MC :** {saved.conf*100:.0f} %<br>
-                • **Distance enfant :** {saved.child_d} m
+                • **Distance obstacle :** {saved.child_d} m
                 """
             ),
             unsafe_allow_html=True,
