@@ -787,5 +787,5 @@ with tab_share:
     st.markdown("### Partager l'application")
     share_url = "https://distance-arret.streamlit.app/"
     qr_img = qrcode.make(share_url)
-    st.image(qr_img, caption=share_url, use_container_width=False)
+    st.image(qr_img.get_image(), caption=share_url, use_container_width=False)
     st.write("Scannez ce QR code pour accéder au simulateur.")
