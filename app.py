@@ -21,6 +21,24 @@ import qrcode
 
 st.set_page_config(page_title="Simulateur – Distance d’arrêt",
                    page_icon="🚗", layout="wide")
+
+PASSWORD = "ensiacet"
+
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    st.title("Accès restreint")
+    st.write("Veuillez saisir le mot de passe pour continuer.")
+    pwd = st.text_input("Mot de passe", type="password")
+    if st.button("Valider"):
+        if pwd == PASSWORD:
+            st.session_state["authenticated"] = True
+            st.experimental_rerun()
+        else:
+            st.error("Mot de passe incorrect.")
+    st.stop()
+
 st.title("Simulateur de distance d'arrêt")
 
 # Le contenu d'introduction est désormais présenté dans l'onglet Accueil
