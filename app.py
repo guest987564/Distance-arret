@@ -17,6 +17,7 @@ import streamlit as st
 import textwrap
 import math
 import time
+import qrcode
 
 st.set_page_config(page_title="Simulateur – Distance d’arrêt",
                    page_icon="🚗", layout="wide")
@@ -358,12 +359,13 @@ params = Params(
     child_d=child_d,
 )
 
-tab_accueil, tab_res, tab_stats, tab_var, tab_about = st.tabs([
+tab_accueil, tab_res, tab_stats, tab_var, tab_about, tab_share = st.tabs([
     "🏠 Accueil",
     "📊 Tableau de bord",
     "📋 Statistiques",
     "🔎 Variables",
     "ℹ️ À propos",
+    "📤 Partager",
 ])
 
 with tab_accueil:
@@ -779,3 +781,11 @@ with tab_about:
         )
     else:
         st.info("Aucune simulation pour l'instant.")
+
+# ------------------ Partager ----------------------------------
+with tab_share:
+    st.markdown("### Partager l'application")
+    share_url = "https://distance-arret.streamlit.app/"
+    qr_img = qrcode.make(share_url)
+    st.image(qr_img, caption=share_url, use_column_width=False)
+    st.write("Scannez ce QR code pour accéder au simulateur.")
