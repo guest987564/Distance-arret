@@ -27,6 +27,24 @@ st.title("Simulateur de distance d'arrêt")
 G = 9.81  # gravité (m·s-2)
 RNG = np.random.default_rng(42)
 
+# ---- Paramètres communs aux graphiques ---------------------------------
+def nice_ticks(max_val: float, target: int = 10) -> float:
+    """Pas d'axe "agréable" pour une portée donnée."""
+    if max_val <= 0:
+        return 1
+    step = max_val / target
+    magnitude = 10 ** math.floor(math.log10(step))
+    residual = step / magnitude
+    if residual > 5:
+        step = 10 * magnitude
+    elif residual > 2:
+        step = 5 * magnitude
+    elif residual > 1:
+        step = 2 * magnitude
+    else:
+        step = magnitude
+    return step
+
 # --- Thème Plotly personnalisé ------------------------------------------
 COLORWAY = ["#4E79A7", "#F28E2B", "#76B7B2"]
 pio.templates["custom"] = go.layout.Template(pio.templates["plotly_white"])
@@ -469,7 +487,8 @@ if dist is not None:
             annotation_text="Position de l'obstacle",
             annotation_position="top",
         )
-        fig_hist.update_xaxes(range=[0, x_max])
+        tick_step = nice_ticks(x_max)
+        fig_hist.update_xaxes(range=[0, x_max], dtick=tick_step)
         st.plotly_chart(fig_hist, use_container_width=True)
 
         cdf = np.arange(1, len(sorted_dist) + 1) / len(sorted_dist)
@@ -481,7 +500,7 @@ if dist is not None:
         )
         fig_cdf.update_traces(name="CDF")
         fig_cdf.update_yaxes(range=[0, 100])
-        fig_cdf.update_xaxes(range=[0, x_max])
+        fig_cdf.update_xaxes(range=[0, x_max], dtick=tick_step)
         fig_cdf.add_vline(
             x=child_d,
             line_dash="dash",
