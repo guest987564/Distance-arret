@@ -423,6 +423,9 @@ if dist is not None:
     z = stats.norm.ppf(0.5 + params.conf / 2)
     ci = z * std
 
+    sorted_dist = np.sort(dist)
+    x_max = max(child_d, sorted_dist.max())
+
     # -------- Graphiques et KPIs --------------------------------------
     with tab_res:
         c1, c2, c3, c4 = st.columns(4)
@@ -466,9 +469,9 @@ if dist is not None:
             annotation_text="Position de l'obstacle",
             annotation_position="top",
         )
+        fig_hist.update_xaxes(range=[0, x_max])
         st.plotly_chart(fig_hist, use_container_width=True)
 
-        sorted_dist = np.sort(dist)
         cdf = np.arange(1, len(sorted_dist) + 1) / len(sorted_dist)
         fig_cdf = px.area(
             x=sorted_dist,
@@ -478,6 +481,7 @@ if dist is not None:
         )
         fig_cdf.update_traces(name="CDF")
         fig_cdf.update_yaxes(range=[0, 100])
+        fig_cdf.update_xaxes(range=[0, x_max])
         fig_cdf.add_vline(
             x=child_d,
             line_dash="dash",
@@ -487,7 +491,7 @@ if dist is not None:
         )
         fig_cdf.add_vrect(
             x0=child_d,
-            x1=sorted_dist.max(),
+            x1=x_max,
             fillcolor="red",
             opacity=0.2,
             line_width=0,
