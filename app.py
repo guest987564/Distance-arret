@@ -233,45 +233,44 @@ st.sidebar.header("Paramètres")
 advanced = st.sidebar.toggle("Mode avancé")
 
 if advanced:
-    with st.sidebar.expander("Paramètres avancés", expanded=True):
-        speed = st.slider(
-            "Vitesse compteur (km/h)",
-            30,
-            130,
-            90,
-            step=5,
-            help="Vitesse affichée au compteur",
-        )
-        profile = st.select_slider(
-            "Profil conducteur",
-            options=list(PROFILE_MED),
-            value="Standard",
-            help="Temps de réaction médian selon le conducteur",
-        )
-        surface = st.select_slider(
-            "Chaussée 🚧",
-            options=list(SURFACE_μ),
-            help="État de la route (adhérence)",
-        )
-        tyre = st.select_slider(
-            "Pneus 🔄",
-            options=list(SURFACE_μ["sec"].keys()),
-            help="Usure des pneumatiques",
-        )
-        slope_options = [
-            "Montée 4°",
-            "Montée 2°",
-            "Plat",
-            "Descente 2°",
-            "Descente 4°",
-        ]
-        slope = st.select_slider(
-            "Pente",
-            options=slope_options,
-            value="Plat",
-            help="Inclinaison de la route",
-        )
-        conf = st.slider("Confiance (%)", 0, 100, 95, help="Niveau de confiance") / 100
+    speed = st.slider(
+        "Vitesse compteur (km/h)",
+        30,
+        130,
+        90,
+        step=5,
+        help="Vitesse affichée au compteur",
+    )
+    profile = st.select_slider(
+        "Profil conducteur",
+        options=list(PROFILE_MED),
+        value="Standard",
+        help="Temps de réaction médian selon le conducteur",
+    )
+    surface = st.select_slider(
+        "Chaussée 🚧",
+        options=list(SURFACE_μ),
+        help="État de la route (adhérence)",
+    )
+    tyre = st.select_slider(
+        "Pneus 🔄",
+        options=list(SURFACE_μ["sec"].keys()),
+        help="Usure des pneumatiques",
+    )
+    slope_options = [
+        "Montée 4°",
+        "Montée 2°",
+        "Plat",
+        "Descente 2°",
+        "Descente 4°",
+    ]
+    slope = st.select_slider(
+        "Pente",
+        options=slope_options,
+        value="Plat",
+        help="Inclinaison de la route",
+    )
+    conf = st.slider("Confiance (%)", 0, 100, 95, help="Niveau de confiance") / 100
 else:
     PRESETS = {
         "Ville – chaussée sèche": {
