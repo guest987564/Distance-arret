@@ -25,9 +25,7 @@ st.set_page_config(
     layout="wide",
 )
 
-user_id = st.secrets["ID"]
-password = st.secrets["MDP"]
-st.write(f"ID chargé : {user_id}")
+
 
 st.title("Simulateur de distance d'arrêt")
 
