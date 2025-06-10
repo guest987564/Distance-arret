@@ -459,6 +459,13 @@ if dist is not None:
                 )
             },
         )
+        fig_hist.add_vline(
+            x=child_d,
+            line_dash="dash",
+            line_width=2,
+            annotation_text="Position de l’enfant",
+            annotation_position="top",
+        )
         st.plotly_chart(fig_hist, use_container_width=True)
 
         sorted_dist = np.sort(dist)
