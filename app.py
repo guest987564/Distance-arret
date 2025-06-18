@@ -18,6 +18,7 @@ import textwrap
 import math
 import time
 import qrcode
+import matplotlib.pyplot
 
 st.set_page_config(
     page_title="Simulateur – Distance d’arrêt",
