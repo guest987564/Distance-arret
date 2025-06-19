@@ -402,7 +402,6 @@ with tab_accueil:
         "La **distance d'arrêt** d’un véhicule dépend de plusieurs facteurs : vitesse, "
         "adhérence, temps de réaction… \n"
         "Ce simulateur vous aide à visualiser et comprendre leur impact, "
-        "sans formules compliquées."
     )
 
     st.info(
