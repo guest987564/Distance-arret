@@ -407,7 +407,6 @@ with tab_accueil:
 
     st.info(
         "ℹ️ En France, la distance d’arrêt réglementaire à **50 km/h** est d’environ **25 m**. "
-        "[En savoir plus](https://www.service-public.fr/)."
     )
 
     st.markdown("### Qu'est-ce que la distance d'arrêt ?")
