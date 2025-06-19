@@ -260,7 +260,7 @@ advanced = st.sidebar.toggle("Mode avancé")
 
 if advanced:
     speed = st.slider(
-        "Vitesse compteur (km/h)",
+        "Vitesse de la voiture (km/h)",
         30,
         130,
         90,
