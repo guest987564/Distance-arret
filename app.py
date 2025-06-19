@@ -137,10 +137,10 @@ def tr_pdf(x: np.ndarray, profile: str) -> np.ndarray:
 
 # ---- Adhérence μ (Bêta bornée) ----
 SURFACE_μ = {
-    "sec":       {"neuf": .85, "mi-usure": .80, "usé": .75},
-    "mouillée":   {"neuf": .55, "mi-usure": .47, "usé": .40},
-    "neige":     {"neuf": .25, "mi-usure": .25, "usé": .25},
-    "glace":     {"neuf": .10, "mi-usure": .10, "usé": .10},
+    "sec":       {"neufs": .85, "mi-usés": .80, "usés": .75},
+    "mouillé":   {"neufs": .55, "mi-usés": .47, "usés": .40},
+    "neige":     {"neufs": .25, "mi-usés": .25, "usés": .25},
+    "glace":     {"neufs": .10, "mi-usés": .10, "usés": .10},
 }
 A_B, B_B = 2, 3
 
@@ -274,12 +274,12 @@ if advanced:
         help="Temps de réaction médian selon le conducteur",
     )
     surface = st.select_slider(
-        "Chaussée 🚧",
+        "État de la route 🚧",
         options=list(SURFACE_μ),
         help="État de la route (adhérence)",
     )
     tyre = st.select_slider(
-        "Pneus 🔄",
+        "État des pneus 🔄",
         options=list(SURFACE_μ["sec"].keys()),
         help="Usure des pneumatiques",
     )
@@ -291,7 +291,7 @@ if advanced:
         "Descente 4°",
     ]
     slope = st.select_slider(
-        "Pente",
+        "Inclinaison de la route",
         options=slope_options,
         value="Plat",
         help="Inclinaison de la route",
@@ -304,31 +304,31 @@ else:
             "speed": 30,
             "profile": "Standard",
             "surface": "sec",
-            "tyre": "neuf",
+            "tyre": "neufs",
             "slope": "Plat",
         },
-        "Ville – chaussée mouillée": {
-            "desc": "30 km/h, conducteur fatigué, pneus mi-usure",
+        "Ville – chaussée mouillé": {
+            "desc": "30 km/h, conducteur fatigué, pneus mi-usés",
             "speed": 30,
             "profile": "Fatigué",
-            "surface": "mouillée",
-            "tyre": "mi-usure",
+            "surface": "mouillé",
+            "tyre": "mi-usés",
             "slope": "Plat",
         },
         "Route – chaussée sèche": {
-            "desc": "80 km/h, conducteur standard, pneus mi-usure",
+            "desc": "80 km/h, conducteur standard, pneus mi-usés",
             "speed": 80,
             "profile": "Standard",
             "surface": "sec",
-            "tyre": "mi-usure",
+            "tyre": "mi-usés",
             "slope": "Plat",
         },
-        "Route – chaussée mouillée": {
+        "Route – chaussée mouillé": {
             "desc": "80 km/h, conducteur très fatigué, pneus usés",
             "speed": 80,
             "profile": "Très fatigué",
-            "surface": "mouillée",
-            "tyre": "usé",
+            "surface": "mouillé",
+            "tyre": "usés",
             "slope": "Plat",
         },
         "Autoroute – chaussée sèche": {
@@ -336,15 +336,15 @@ else:
             "speed": 130,
             "profile": "Alerte",
             "surface": "sec",
-            "tyre": "neuf",
+            "tyre": "neufs",
             "slope": "Plat",
         },
-        "Autoroute – chaussée mouillée": {
-            "desc": "110 km/h, conducteur standard, pneus mi-usure",
+        "Autoroute – chaussée mouillé": {
+            "desc": "110 km/h, conducteur standard, pneus mi-usés",
             "speed": 110,
             "profile": "Standard",
-            "surface": "mouillée",
-            "tyre": "mi-usure",
+            "surface": "mouillé",
+            "tyre": "mi-usés",
             "slope": "Plat",
         },
     }
@@ -764,10 +764,10 @@ if dist is not None:
             align="center",
         )
         fig.update_layout(
-            title_text="Angle de pente θ (°)",
+            title_text="Angle d'inclinaison de la route θ (°)",
             title_x=0.5,
             margin=dict(t=80),
-            xaxis_title="Angle de pente θ (°)",
+            xaxis_title="Angle d'inclinaison de la route θ (°)",
             yaxis_title="Densité (%)",
             legend=dict(
                 title="Courbes",
@@ -779,7 +779,7 @@ if dist is not None:
             ),
             meta={
                 "description": (
-                    "Histogramme simulé et densité théorique de la pente."
+                    "Histogramme simulé et densité théorique de l'inclinaison de la route."
                 )
             },
         )
@@ -802,10 +802,10 @@ with tab_about:
                 f"""
                 • **Vitesse compteur :** {saved.speed} km/h<br>
                 • **Profil conducteur :** {saved.profile}  – temps de réaction médian ≈ {tr_nom:.1f} s<br>
-                • **Chaussée :** {saved.surface}<br>
-                • **Pneus :** {saved.tyre}<br>
+                • **État de la route :** {saved.surface}<br>
+                • **État des pneus :** {saved.tyre}<br>
                 • **Adhérence nominale μ :** {mu_base:.2f} (plage simulée ±0,15)<br>
-                • **Pente :** {SLOPE[saved.slope]:+} ° ({saved.slope})<br>
+                • **Inclinaison de la route :** {SLOPE[saved.slope]:+} ° ({saved.slope})<br>
                 • **Confiance MC :** {saved.conf*100:.0f} %<br>
                 • **Distance obstacle :** {saved.child_d} m
                 """
