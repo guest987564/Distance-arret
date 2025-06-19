@@ -401,7 +401,7 @@ with tab_accueil:
     st.write(
         "La **distance d'arrêt** d’un véhicule dépend de plusieurs facteurs : vitesse, "
         "adhérence, temps de réaction… \n"
-        "Ce simulateur vous aide à visualiser et comprendre leur impact, "
+        "Ce simulateur vous aide à visualiser et comprendre leur impact. "
     )
 
     st.info(
