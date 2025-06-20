@@ -815,6 +815,12 @@ with tab_about:
     else:
         st.info("Aucune simulation pour l'instant.")
 
+    st.markdown("### Auteurs")
+    st.markdown(
+        "Ce calculateur a été réalisé par **Mohamed MOSTEFAOUI** "
+        "et **Elouan LE GUYADER** – Toulouse INP‑ENSIACET."
+    )
+
 # ------------------ Partager ----------------------------------
 with tab_share:
     st.markdown("### Partager l'application")
