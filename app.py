@@ -558,10 +558,9 @@ if dist is not None:
             f"La distance d'arrêt moyenne est **{mean:.1f} ± {ci:.1f} m** "
             f"(niveau de confiance {params.conf*100:.0f} %)."
         )
-        chance = math.inf if p_coll == 0 else int(round(1 / p_coll))
-        if chance != math.inf:
+        if p_coll > 0:
             st.write(
-                f"Avec ces conditions, il y a **1 chance sur {chance}** de ne pas s'arrêter avant l'obstacle."
+                f"La probabilité de ne pas s'arrêter avant l'obstacle est d'environ {p_coll*100:.1f} %."
             )
         else:
             st.write("La collision est quasi impossible.")
